@@ -1,0 +1,12 @@
+# Gitleaks configuration: allowlists the detect-secrets baseline.
+#
+# `.secrets.baseline` stores hashes of audited detect-secrets findings, never
+# plaintext secrets, so its `hashed_secret` hex strings tripping the
+# `generic-api-key` rule are false positives by construction. The underlying
+# values (local example credentials such as the RabbitMQ guest login) already
+# live in plaintext in the examples and READMEs they were audited from.
+# detect-secrets owns that file's bytes; inline `# gitleaks:allow` comments
+# are not an option there, hence this path allowlist.
+[allowlist]
+description = "detect-secrets baseline holds finding hashes, not secrets"
+paths = ['''\.secrets\.baseline''']

@@ -1,0 +1,93 @@
+---
+# Add 'documentation' label to any changes within 'docs' folder or any subfolders
+documentation:
+  - changed-files:
+      - any-glob-to-any-file: docs/**
+# Apply area labels from the component and cross-cutting paths a PR changes.
+area:core:
+  - changed-files:
+      - any-glob-to-any-file: ['src/litestar_events/*.py', 'src/litestar_events/contrib/**', 'tests/conftest.py', 'tests/test_*.py', 'tests/unit/**', 'tests/smoke/**']
+area:docs:
+  - changed-files:
+      - any-glob-to-any-file: ['docs/**', '**/*.md', '**/*.rst']
+area:ci:
+  - changed-files:
+      - any-glob-to-any-file: .github/workflows/**
+area:deps:
+  - changed-files:
+      - any-glob-to-any-file: ['pyproject.toml', 'uv.lock']
+# Add 'release' label to any PR where the head branch name starts with 'release'
+release:
+  - head-branch: ['^release']
+bug:
+  - head-branch: ['^bugfix', '^bug/', '^fix/', '^hotfix']
+github_actions:
+  - changed-files:
+      - any-glob-to-any-file: ['.github/workflows/**', '.github/*labeler*.yml']
+tests:
+  - changed-files:
+      - any-glob-to-any-file: tests/**
+examples:
+  - changed-files:
+      - any-glob-to-any-file: examples/**
+# Broker / transport labels (one per emitter backend)
+confluent:
+  - changed-files:
+      - any-glob-to-any-file:
+          - src/litestar_events/contrib/confluent/**
+          - tests/integration/test_confluent.py
+          - examples/confluent/**
+kafka:
+  - changed-files:
+      - any-glob-to-any-file:
+          - src/litestar_events/contrib/kafka/**
+          - tests/integration/test_kafka.py
+          - examples/kafka/**
+mqtt:
+  - changed-files:
+      - any-glob-to-any-file:
+          - src/litestar_events/contrib/mqtt/**
+          - tests/integration/test_mqtt.py
+          - examples/mqtt/**
+nats:
+  - changed-files:
+      - any-glob-to-any-file:
+          - src/litestar_events/contrib/nats/**
+          - tests/integration/test_nats.py
+          - examples/nats/**
+postgres:
+  - changed-files:
+      - any-glob-to-any-file:
+          - src/litestar_events/contrib/postgres/**
+          - tests/integration/test_postgres.py
+          - examples/postgres/**
+pubsub:
+  - changed-files:
+      - any-glob-to-any-file:
+          - src/litestar_events/contrib/pubsub/**
+          - tests/integration/test_pubsub.py
+          - examples/pubsub/**
+rabbit:
+  - changed-files:
+      - any-glob-to-any-file:
+          - src/litestar_events/contrib/rabbit/**
+          - tests/integration/test_rabbit.py
+          - examples/rabbit/**
+redis:
+  - changed-files:
+      - any-glob-to-any-file:
+          - src/litestar_events/contrib/redis/**
+          - tests/integration/test_redis.py
+          - examples/redis/**
+sqs:
+  - changed-files:
+      - any-glob-to-any-file:
+          - src/litestar_events/contrib/sqs/**
+          - tests/integration/test_sqs.py
+          - examples/sqs/**
+zmq:
+  - changed-files:
+      - any-glob-to-any-file:
+          - src/litestar_events/contrib/zmq/**
+          - tests/integration/test_zmq.py
+          - examples/zmq/**

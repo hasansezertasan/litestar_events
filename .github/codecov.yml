@@ -1,0 +1,21 @@
+---
+coverage:
+  status:
+    project:
+      default:
+        # Mirrors the default-suite coverage (see [tool.coverage.report]
+        # fail_under): backend loops are unit-covered via mocked transports.
+        # Raise toward 99% as broker-backed coverage lands.
+        target: 94%
+        threshold: 0.5%
+        base: auto
+        flags:
+          - unit
+        paths:
+          - src
+        branches:
+          - main
+        if_ci_failed: error
+        informational: false
+        only_pulls: false
+comment: true

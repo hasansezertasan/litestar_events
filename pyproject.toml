@@ -1,0 +1,896 @@
+[project]
+name = "litestar_events"
+description = "Event Emitter Backends for Litestar."
+license = "MIT"
+readme = "README.md"
+authors = [
+  { name = "Hasan Sezer Taşan", email = "hasansezertasan@gmail.com" },
+]
+maintainers = [
+  { name = "Hasan Sezer Taşan", email = "hasansezertasan@gmail.com" },
+]
+dynamic = ["version"]
+keywords = [
+  "litestar",
+  "events",
+  "emitter",
+  "async",
+  "backend",
+  "sphinx",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Information Technology",
+  "Intended Audience :: System Administrators",
+  "License :: OSI Approved :: MIT License",
+  "Natural Language :: English",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+  "Programming Language :: Python",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Topic :: Software Development :: Libraries",
+  "Topic :: Software Development",
+  "Typing :: Typed",
+]
+requires-python = ">=3.10"
+dependencies = [
+  "litestar",
+]
+
+[project.optional-dependencies]
+confluent = [
+  "confluent-kafka>=2,!=2.8.1,<3; python_version < '3.13'",
+  "confluent-kafka>=2.6,!=2.8.1,<3; python_version >= '3.13'",
+]
+kafka = ["aiokafka>=0.9,<0.15"]
+mqtt = ["aiomqtt>=2"]
+nats = ["nats-py>=2.12.0,<=3.0.0"]
+postgres = ["psycopg[pool]>=3.2.0"]
+pubsub = ["gcloud-aio-pubsub>=7,<8"]
+rabbit = ["aio-pika>=9,<10"]
+redis = ["redis>=8.1.0,<8.2.0"]
+sqs = ["aiobotocore>=3,<4"]
+zmq = ["pyzmq>=25,<28"]
+
+[project.urls]
+changelog = "https://github.com/hasansezertasan/litestar_events/blob/main/CHANGELOG.md"
+documentation = "https://hasansezertasan.github.io/litestar_events"
+homepage = "https://github.com/hasansezertasan/litestar_events"
+issues = "https://github.com/hasansezertasan/litestar_events/issues"
+releasenotes = "https://github.com/hasansezertasan/litestar_events/releases"
+source = "https://github.com/hasansezertasan/litestar_events.git"
+
+
+[dependency-groups]
+dev = [
+  "tox==4.65.0",
+  "tox-uv==1.36.1",
+  "debugpy==1.8.22",
+  { include-group = "optionals" },
+  { include-group = "style" },
+  { include-group = "test" },
+]
+# Installs the project with every backend extra (mirrors the pre-adoption
+# `optionals` group): local runs and the prek pytest hook need all transports
+# importable. The tox test envs install the same set via `extras` (see
+# [tool.tox.env_run_base]) instead of this group.
+optionals = [
+  "litestar_events[confluent,kafka,mqtt,nats,postgres,pubsub,rabbit,redis,sqs,zmq]",
+]
+style = [
+  "basedpyright==1.40.2",
+  "detect-secrets==1.5.0",
+  "editorconfig-checker==3.8.0",
+  "import-linter==2.15",
+  "mypy==2.4.0",
+  "pylint==4.0.6",
+  "pyrefly==1.2.0",
+  "ruff==0.16.1",
+  "slotscheck==0.21.0",
+  "sphinx-lint==1.0.2",
+  "taplo==0.9.3",
+  "ty==0.0.66",
+  "typos==1.49.0",
+  "zuban==0.9.1",
+]
+# semgrep is deliberately its own group rather than part of `style`: `dev`
+# includes `style` wholesale, so a plain `uv sync` — and every Windows/macOS
+# cell in ci.yml, which runs `uv run --locked tox run` — would download and
+# unpack ~215 MB (the wheel bundles a native semgrep-core) for a tool that only
+# ever executes in the Linux-only `style` job. The tox `style` env lists this
+# group explicitly. Still a single version source, same as every other pin.
+sast = [
+  "semgrep==1.180.0",
+]
+test = [
+  "coverage-enable-subprocess==1.0",
+  "coverage[toml]==7.16.2",
+  "pytest-mock==3.16.0",
+  "pytest-rerunfailures==16.7",
+  "pytest-xdist[psutil]==3.8.0",
+  "pytest==9.1.1",
+  "pytest-sugar",
+  "pytest-asyncio>=0.23.0",
+  "dirty-equals",
+  "inline-snapshot",
+  "pytest-deadfixtures==3.1.0",
+  # Integration tests start real brokers in containers and bound each test so a
+  # wedged broker fails with a traceback instead of hanging the run.
+  "testcontainers[kafka,localstack,nats,postgres,rabbitmq,redis]>=4",
+  "pytest-timeout>=2.3",
+]
+docs = [
+  "sphinx==8.1.3",
+  "shibuya==2026.7.12",
+  "sphinx-autobuild==2024.10.3", # 2025.x drops Python 3.10 (requires-python >= 3.11)
+  "sphinx-copybutton==0.5.2",
+  "sphinx-design==0.6.1", # 0.7.0 drops Python 3.10 (requires-python >= 3.11)
+  "sphinx-togglebutton==0.4.5",
+  "sphinx-paramlinks==0.6.0",
+  "auto-pytabs[sphinx]==0.5.0",
+  "myst-parser==4.0.1",
+  # Per-page "last updated" footer sourced from git commit dates (ADR-027);
+  # offline, no network. Works from full history (docs CI checks out depth 0).
+  "sphinx-last-updated-by-git==0.3.8",
+  # PEP 440 version parsing/sorting used by tools/build_docs.py to order
+  # published versions and pick the `latest` alias (ADR-027). Also a Sphinx
+  # transitive dependency; pinned here for the explicit direct use.
+  "packaging>=24.0",
+]
+tool = [
+  "commitizen==4.17.0",
+  # "marimo==0.15.2",
+  # "inflection==0.5.1",
+  # "copier==9.11.0",
+]
+prek = [
+  # Newer than the template-rendered 0.4.12: 0.5.5 was the pre-adoption pin.
+  # Keep this ahead of the template until its frozen pins catch up.
+  "prek==0.5.5",
+]
+
+
+[build-system]
+
+requires = ["hatchling", "hatch-vcs"]
+
+build-backend = "hatchling.build"
+
+
+[tool.uv]
+add-bounds = "exact"
+cache-keys = [
+  { file = "pyproject.toml" },
+  { git = { commit = true, tags = true } },
+]
+package = true
+trusted-publishing = "always"
+
+
+[tool.hatch.version]
+source = "vcs"
+# Last-resort sentinel: only used when a build sees neither a .git directory nor
+# an expanded .git_archival.txt (e.g. an archive of a commit with no reachable
+# tag). "0.0.0" reads clearly as "version could not be determined" rather than
+# masquerading as a real early release. See .git_archival.txt + .gitattributes
+# `export-subst` for the archive path that recovers the real tag-derived version.
+fallback-version = "0.0.0"
+
+
+[tool.hatch.build]
+hooks.vcs.version-file = "src/litestar_events/_version.py"
+
+
+[tool.hatch.version.raw-options]
+version_scheme = "only-version"
+local_scheme = "no-local-version"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+
+[tool.hatch.build.targets.sdist]
+# The package uses a src layout, so the source tree lives under /src (not
+# /litestar_events); including /src ships the actual modules -- and, for
+# C-extension projects, the .pyx/.pxd sources needed to compile from the sdist.
+include = [
+  "/README.md",
+  "LICENSE",
+  "/src",
+  "/tests",
+  "/docs/examples",
+]
+
+
+[tool.commitizen]
+# Commit-authoring and message linting only. release-please owns version
+# bumping, git tagging, and CHANGELOG.md (see .github/release-please-config.json),
+# so the bump/tag/changelog settings are intentionally omitted here to avoid two
+# tools competing over the same tags and changelog file.
+name = "cz_conventional_commits"
+
+[tool.pytest.ini_options]
+# addopts = "-rXs --strict-config --strict-markers"
+# `integration` tests need real brokers (started via testcontainers, Docker
+# required), so they are deselected by default. A CLI `-m integration`
+# overrides this addopts default; CI runs them in a dedicated Ubuntu-only job.
+addopts = "-v --tb=short --doctest-glob=README.md -m 'not integration'"
+# One marker per component, auto-applied by tests/conftest.py from each test's
+# top-level tests/<dir>/. Enables `pytest -m web` locally and per-component CI
+# jobs (issue #160, ADR-028); `integration` (ADR-008) is one axis of the scheme.
+markers = [
+  "core: core/shared component tests",
+  "integration: requires a running broker (see tests/integration/conftest.py)",
+  "smoke: cross-cutting checks (imports, packaging)",
+]
+# `auto` (not the template's `strict`): the existing async suite was written
+# without explicit @pytest.mark.asyncio annotations, so strict mode would skip
+# every coroutine test (and `filterwarnings = error` would promote the skip
+# warning to a failure). Revisit if the suite is ever annotated.
+asyncio_mode = "auto"
+# Per-test safety net (belt-and-suspenders with the job-level timeout-minutes):
+# a wedged broker call fails the test instead of stalling the job. "thread" is
+# the only method that works on Windows (no SIGALRM) and is robust for async.
+timeout = 300
+timeout_method = "thread"
+filterwarnings = [
+  "error",
+  # testcontainers internals still use their own deprecated wait helpers
+  # (`@wait_container_is_ready` at import of the rabbit/redis/nats container
+  # modules, `wait_for_logs` inside LocalStackContainer): the warnings fire in
+  # third-party code our fixtures cannot migrate, so ignore those two exact
+  # messages. Our own fixtures use the structured `waiting_for` strategies.
+  "ignore:The @wait_container_is_ready decorator is deprecated:DeprecationWarning",
+  "ignore:The wait_for_logs function with string or callable predicates is deprecated:DeprecationWarning",
+  # Third-party retry helpers (historically `backoff` via gcloud-aio-auth, used
+  # by the pubsub backend) still call the deprecated
+  # `asyncio.iscoroutinefunction`; the warning fires in third-party code on
+  # Python 3.14+. Ignore that exact message until upstream migrates.
+  "ignore:'asyncio.iscoroutinefunction' is deprecated:DeprecationWarning",
+]
+# The project README is the deliberately small Markdown doctest surface. Other
+# Markdown files can use illustrative snippets without becoming pytest inputs.
+testpaths = ["tests", "README.md"]
+doctest_optionflags = "ELLIPSIS IGNORE_EXCEPTION_DETAIL NORMALIZE_WHITESPACE"
+xfail_strict = true
+
+
+[tool.coverage.run]
+branch = true
+# Match `_version.py` wherever it resolves: `src/...` in editable dev installs and
+# `.../site-packages/...` when tox/CI installs the built (non-editable) wheel. A
+# `src/**`-only pattern silently misses the installed copy and reports it at 0%.
+omit = ["*/_version.py"]
+parallel = true
+# Store data-file paths relative to the project root so `.coverage` files produced
+# on different runners/OSes merge in the `coverage-combine` CI job without
+# absolute-path mismatches. Complements the `[tool.coverage.paths]` remap below
+# (which unifies the src/ vs site-packages layouts). See ADR-026.
+relative_files = true
+source_pkgs = ["litestar_events", "tests"]
+
+
+[tool.coverage.paths]
+# Unify coverage data across environments. tox installs the built wheel into
+# each env's site-packages, so the same source file is measured under a different
+# `.tox/<env>/.../site-packages/litestar_events` path per interpreter. Without
+# remapping those back to the canonical `src/` tree, `coverage combine` keeps a
+# separate copy per env and a version-gated line covered in one interpreter but not
+# another is wrongly counted as missed — silently failing the `fail_under` gate.
+# `tests` needs no remapping: it is never installed, so every environment measures
+# it at the same repo-local path.
+litestar_events = ["src/litestar_events", "*/site-packages/litestar_events"]
+
+
+[tool.coverage.report]
+# Untestable code is excluded per site with `# pragma: no cover`, not with blanket
+# patterns here: a regex matching a `def` line excludes the *whole function body*,
+# so a pattern like `def main\(` would silently un-measure any future `main()`
+# with real logic (and did mask the tested GUI/TUI entrypoints). Pragmas carry the
+# exclusion decision next to the code it affects. See ADR-008.
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
+fail_under = 94
+# 94: the default suite (unit + smoke) covers the shared machinery and every
+# backend's consumer/publisher loops via mocked-transport unit tests
+# (tests/unit/test_*_loops.py, no Docker needed). The remaining gap toward 99
+# is the broker-backed `integration` suite (deselected here — see addopts),
+# whose bodies only run with Docker. Raise this number as covered code lands;
+# never lower it.
+# Patterns match both the `src/` (editable) and installed (`site-packages`)
+# layouts (see [tool.coverage.run] omit).
+omit = ["*/_version.py"]
+show_missing = true
+skip_covered = true
+
+
+[tool.vulture]
+# Framework-invoked handlers: Typer commands, FastAPI routes, FastStream
+# lifecycle hooks, and the MCP tool dispatcher.
+ignore_decorators = [
+  "@app.command",
+  "@app.get",
+  "@app.after_startup",
+  "@app.after_shutdown",
+  "@server.call_tool",
+]
+# Public API surfaces vulture cannot see being used: ``main`` entry points are
+# referenced only via pyproject scripts, ``model_config`` is consumed by
+# pydantic-settings, ``logger`` is imported only by optional components, the MCP
+# ``arguments`` parameter is mandated by the call_tool signature, the Textual
+# names (CSS/compose/on_mount/title/BINDINGS) are invoked by the TUI framework,
+# and ``pytestmark``/``pytest_*`` (conftest hooks) are consumed by pytest at
+# collection time.
+ignore_names = ["CONFIG_FILE_PATH", "logger", "main", "model_config", "pytest_*", "collect_ignore_glob", "_Bad"]
+# `_Bad` (tests/unit/test_emit_contract.py) is a deliberately invalid class
+# hierarchy whose *definition* inside `pytest.raises(TypeError)` is the test —
+# the name is never referenced again, which is exactly what vulture reports.
+min_confidence = 60
+paths = ["src", "tests"]
+
+
+[tool.slotscheck]
+strict-imports = false
+
+
+[tool.importlinter]
+root_package = "litestar_events"
+
+
+[[tool.importlinter.contracts]]
+name = "Layered architecture with independent components"
+type = "layers"
+# Layers are listed high -> low: a layer may import lower layers but never a
+# higher one.
+#
+# Project layout (adopted, not the template skeleton): the per-backend emitter
+# integrations live in `contrib`, on top of the shared root modules
+# (`_queue.py`, `config.py`, `plugin.py`). `contrib` backends must not import
+# each other; imports of the unlayered root modules are not restricted by this
+# contract.
+#
+# `exhaustive` makes the contract fail when a subpackage of
+# `litestar_events` is not named in `layers` — so a new top-level
+# subpackage is a deliberate architecture decision (add it to a layer here)
+# rather than something that silently accretes at the package root. Feature code
+# belongs inside an existing layer; see "Package structure" in `AGENTS.md`. The
+# `exhaustive_ignores` entries are the non-layer foundations: the metadata and
+# hatch-vcs version modules and the `python -m` dispatcher.
+containers = ["litestar_events"]
+exhaustive = true
+exhaustive_ignores = [
+  "__main__",
+  "__metadata__",
+  "_version",
+  # Shared, dependency-free foundation modules: the contrib backends build on
+  # them, and they import nothing internal, so there is no layering to enforce.
+  "_queue",
+  "config",
+  "plugin",
+]
+layers = [
+  "contrib",
+]
+
+
+[tool.ruff]
+fix = true
+output-format = "full"
+preview = true
+show-fixes = true
+src = ["src", "tests", "examples", "docs/examples"]
+target-version = "py310"
+unsafe-fixes = true
+# Demo scripts under examples/ intentionally use print(), pedagogical
+# commented-out config, and per-backend standalone layouts. They are excluded
+# from linting (force-exclude makes prek honor this even when it passes
+# explicit file paths).
+extend-exclude = ["examples"]
+force-exclude = true
+
+
+[tool.ruff.analyze]
+detect-string-imports = true
+preview = true
+
+
+[tool.ruff.format]
+docstring-code-format = true
+line-ending = "lf"
+preview = true
+skip-magic-trailing-comma = true
+
+
+[tool.ruff.lint]
+fixable = ["ALL"]
+# Two opinionated ruff 0.16 preview rules are disabled: RUF105 would rewrite the
+# portable `# noqa` comments into ruff's own `# ruff: ignore` syntax (its docs note
+# `# noqa` is needed for cross-tool compatibility), and RUF201 would rewrite every
+# rule *code* in this config's selectors into long rule *names*. Both are stylistic.
+#
+# The ignores below are the project's deliberate, pre-adoption conventions
+# (restored from its previous config): untyped `Any` returns/args, test asserts
+# and private access, the emitter-loop patterns (PERF203/PLW0717), deferred
+# backend imports (PLC0415), and the documentation-convention family (the
+# project does not enforce docstrings; pylint's C0114-C0116 stay disabled too).
+ignore = ["COM812", "CPY", "FIX", "RUF105", "RUF201", "TD", "ARG", "ANN401", "SLF001", "PLR0913", "PLR2004", "C901", "PLC0415", "PLR6301", "RUF029", "D100", "D102", "D103", "D104", "D105", "D107", "DOC201", "PERF203", "PLW0717"]
+logger-objects = ["logging_setup.logger"]
+preview = true
+select = ["ALL"]
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+# skip-magic-trailing-comma = true
+split-on-trailing-comma = false
+
+[tool.ruff.lint.flake8-copyright]
+author = "Hasan Sezer Taşan <hasansezertasan@gmail.com>"
+
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+
+[tool.ruff.lint.mccabe]
+max-complexity = 5
+
+
+[tool.ruff.lint.pycodestyle]
+ignore-overlong-task-comments = true
+
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"
+
+
+[tool.ruff.lint.per-file-ignores]
+# Recursive glob so nested test packages (tests/cli, tests/gui, ...) are covered.
+# Tests legitimately use asserts/magic values, reach into package internals, and
+# don't need return-value documentation on their fixtures and helpers.
+"tests/**/*.py" = ["S101", "PLR2004", "PLC2701", "DOC201", "ANN", "PT011", "PT019", "S106", "TC"]
+# B023: the per-listener dispatch closures in the loop-driven emitters capture
+# the loop variables (args/kwargs/event_id) but are awaited via
+# ``asyncio.gather`` in the same iteration, before the loop reassigns them — a
+# verified false positive for this immediate-consumption pattern. Applied
+# backend-wide for consistency (callback-driven backends never trigger B023).
+"./src/litestar_events/contrib/**/*.py" = ["B023"]
+"examples/**/*.py" = ["INP001"]
+# Documentation examples are importable modules tested by
+# ``tests/test_docs_examples.py``; they are not application packages.
+"docs/examples/**/*.py" = ["INP001"]
+# The Sphinx config is a standalone module, not part of an importable package.
+"docs/conf.py" = ["INP001"]
+# The docs warning-allowlist gate is a standalone script (not an importable
+# package) whose whole job is to print GitHub `::error::` annotations to stdout.
+"docs/check_warnings.py" = ["INP001", "T201"]
+# The versioned-docs build orchestrator is a standalone CLI script under tools/,
+# not part of an importable package (ADR-027).
+"tools/build_docs.py" = ["INP001"]
+
+
+[tool.ruff.lint.pyupgrade]
+keep-runtime-typing = true
+
+
+[tool.ruff.lint.ruff]
+parenthesize-tuple-in-subscript = true
+
+
+[tool.mypy]
+# `disable_error_code` + `ignore_missing_imports` are the project's
+# pre-adoption settings: the backend client libraries (aiokafka, aiobotore,
+# redis, ...) ship without type stubs, so calls into them and values flowing
+# out of them cannot be typed precisely. Everything else stays strict.
+disable_error_code = ["assignment", "no-any-return", "no-untyped-call"]
+files = ["src", "docs/examples"]
+ignore_missing_imports = true
+pretty = true
+python_version = "3.10"
+strict = true
+
+
+[tool.basedpyright]
+# Paths resolve relative to this file (repo root), so no separate
+# pyrightconfig.json is needed. These are the project's pre-adoption settings:
+# standard mode with the unknown-member/unused-function noise off. The suite
+# deliberately reaches into internals and passes invalid arguments to
+# validators, which stricter modes flag.
+disableBytesTypePromotions = true
+include = ["src", "tests", "docs/examples"]
+pythonVersion = "3.10"
+reportMissingTypeStubs = false
+reportPrivateImportUsage = true
+reportUnknownMemberType = false
+reportUnnecessaryTypeIgnoreComment = true
+reportUnusedFunction = false
+reportFunctionMemberAccess = false
+typeCheckingMode = "standard"
+venv = ".venv"
+venvPath = "."
+
+
+[tool.ty.src]
+include = ["src", "tests", "docs/examples"]
+respect-ignore-files = false
+
+
+[tool.ty.environment]
+python-version = "3.10"
+
+
+[tool.ty.terminal]
+error-on-warning = true
+
+
+[tool.pyrefly]
+disable-search-path-heuristics = true
+disable-project-excludes-heuristics = true
+project-excludes = [
+  "**/.venv/**/*",
+  "**/__pycache__",
+  "**/node_modules",
+  "**/venv/**/*",
+]
+project-includes = ["src", "tests", "docs/examples"]
+python-interpreter-path = ".venv/bin/python3"
+python-version = "3.10"
+search-path = [".", "src"]
+use-ignore-files = false
+
+[[tool.pyrefly.sub_config]]
+matches = "tests/**"
+
+[tool.pyrefly.sub_config.errors]
+missing-attribute = false
+bad-argument-type = false
+no-matching-overload = false
+
+[tool.pylint.main]
+# pylint runs as an always-on gate that deliberately overlaps ruff's PL* rules.
+# Its canonical invocation is `pylint src docs/examples`, so it never descends into tests; this
+# ignore-paths is a defensive scope guard for broader invocations (`pylint .`,
+# filename-passing hooks). Tests are linted by ruff, not pylint.
+ignore-paths = ["^tests/.*$"]
+# `.pyi` stubs (the c-extension type stub) are signature-only: their bodies are
+# `...` and every parameter is unused by construction, so pylint's unused-argument
+# check is a guaranteed false positive there. Stubs are type-checked by the
+# type-checker gate, not pylint.
+ignore-patterns = ['.*\.pyi$']
+
+[tool.pylint."messages control"]
+# Only formatter-owned checks, the docstring family, and too-few-public-methods
+# are disabled so pylint is usable out of the box; everything else stays on.
+disable = [
+  "line-too-long", # C0301 — ruff-format owns line length
+  "missing-module-docstring", # C0114
+  "missing-class-docstring", # C0115
+  "missing-function-docstring", # C0116
+  "too-few-public-methods", # R0903 — trips dataclasses / config / Protocol classes
+  # C0415 — the cli->tui/gui/web dispatch, and each component's own heavy or
+  # platform-conditional import (tkinter, uvicorn, the worker's uvloop probe),
+  # are deliberately lazy so import-linter's layering contract holds and a
+  # framework is only imported when the code path that needs it actually runs.
+  # Textual is the exception: the TUI imports it at module scope so `InfoApp`
+  # can be defined there and driven by the headless pilot (ADR-035).
+  "import-outside-toplevel",
+  # W0706 — the generated TUI entry point explicitly re-raises
+  # KeyboardInterrupt/SystemExit ahead of a broad `except Exception` to make the
+  # "let these propagate" intent obvious to readers, even though BaseException
+  # subclasses wouldn't be caught by the Exception clause anyway.
+  "try-except-raise",
+  # R0801 — the component skeletons (gui/tui/mcp/worker) are deliberately
+  # parallel: each fetches package metadata and formats the same info block the
+  # same way. That structural symmetry is a feature of the scaffold, not
+  # copy-paste debt, and R0801 cannot be suppressed inline at the call site.
+  "duplicate-code",
+  # W0718 — every backend's consumer/publisher loop catches `Exception` around
+  # a single message so one bad listener or payload cannot kill the loop
+  # (per-listener error isolation is the library's core guarantee; the ruff
+  # BLE001 ignore covers the same pattern).
+  "broad-exception-caught",
+  # W0640 — the per-listener dispatch closures capture loop variables but are
+  # awaited via `asyncio.gather` in the same iteration (the ruff B023 ignore
+  # covers the same verified-false-positive pattern).
+  "cell-var-from-loop",
+]
+
+[tool.pylint.design]
+max-args = 10
+max-positional-arguments = 10
+max-branches = 20
+# Emitters are configuration holders: one attribute per constructor knob
+# (SQS carries 17). The check still catches unbounded growth.
+max-attributes = 20
+
+[tool.typos.files]
+# copier records `_commit` as a `git describe` string (`v1.2.3-4-g<hash>`) when
+# the template is rendered from an untagged ref, and a fragment of the hex hash
+# can read as a misspelled word, failing the check on a hash nobody chose. The
+# file is machine-written with no prose to check. The prek hook passes
+# `--force-exclude`, so the exclusion holds there as well as in `tox -e style`.
+extend-exclude = [
+  ".copier-answers.yml",
+]
+
+[tool.typos.default.extend-words]
+# Eclipse Mosquitto is the MQTT broker (and `mosquitto_sub`/`mosquitto_pub` its
+# CLI tools); "mosquito" would be the insect.
+mosquitto = "mosquitto"
+# Valid spelling, used consistently across backend log messages ("Dropping
+# unparseable ... message"); normalizing the vocabulary is churn, not a fix.
+unparseable = "unparseable"
+
+[tool.tox]
+# The ``worker`` env is intentionally omitted: it starts a broker-bound process
+# and would hang/fail under ``tox run`` in CI (where no broker is available).
+# The worker is covered by its pytest TestBroker suite; run it on demand with
+# ``tox -e worker`` when a broker is up (e.g. inside the devcontainer).
+env_list = [
+  "style",
+  # Inline ``>>>`` snippets are part of the tested-documentation contract,
+  # so run them in the default CI ``tox run`` invocation.
+  "docs-doctest",
+  "3.14",
+  "3.13",
+  "3.12",
+  "3.11",
+  "3.10",
+]
+requires = ["tox>=4"]
+
+
+[tool.tox.env_run_base]
+commands = [
+  [
+    "coverage",
+    "run",
+    "--module",
+    "pytest",
+    "-v",
+    "--tb=short",
+    "--basetemp={env_tmp_dir}",
+    { replace = "posargs", default = [
+    ], extend = true },
+  ],
+]
+dependency_groups = ["test"]
+description = "Run the tests under {base_python}"
+env_tmp_dir = "{toxworkdir}/tmp/{envname}"
+# Arms coverage-enable-subprocess so xdist/subprocess workers are measured too;
+# `coverage run` plus `parallel = true` writes per-env data files that the CI
+# `coverage combine` step merges.
+set_env = { COVERAGE_PROCESS_START = "{tox_root}/pyproject.toml" }
+# Non-editable: `uv sync --no-editable` builds the project and installs it into
+# site-packages, the layout `[tool.coverage.paths]` remaps and the per-component
+# coverage gates measure (ADR-028).
+package = "wheel"
+# The test suite imports every backend, so each env installs the project with
+# all of its optional backend extras (the `[project.optional-dependencies]`
+# transports). This mirrors the local `optionals` dependency group above.
+extras = ["confluent", "kafka", "mqtt", "nats", "postgres", "pubsub", "rabbit", "redis", "sqs", "zmq"]
+# Every env installs from uv.lock (`uv sync --locked`), so tox tests and lints
+# the exact versions the lockfile pins. The plain `uv-venv-runner` resolves the
+# project's own dependencies fresh on every env creation (tox's
+# `use_frozen_constraints` never reaches its `uv pip install`), so a newer
+# release could float in and clash with a pinned tool such as semgrep.
+runner = "uv-venv-lock-runner"
+
+
+[tool.tox.env.style]
+base_python = ["3.10"]
+commands = [
+  [
+    "ruff",
+    "check",
+    "--no-fix",
+  ],
+  [
+    "ruff",
+    "format",
+    "--check",
+    "--diff",
+  ],
+  [
+    "mypy",
+    "--python-version",
+    "3.10",
+  ],
+  [
+    "mypy",
+    "--python-version",
+    "3.14",
+  ],
+  # Style runs once on Linux, so explicitly sweep platform-gated branches that
+  # mypy would otherwise prune as unreachable on the host platform.
+  [
+    "mypy",
+    "--platform",
+    "win32",
+  ],
+  [
+    "mypy",
+    "--platform",
+    "darwin",
+  ],
+  [
+    "basedpyright",
+  ],
+  [
+    "ty",
+    "check",
+  ],
+  [
+    "pyrefly",
+    "check",
+  ],
+  [
+    "zuban",
+    "check",
+    "src",
+    "docs/examples",
+  ],
+  [
+    "pylint",
+    "src",
+    "docs/examples",
+  ],
+  [
+    "python",
+    "-m",
+    "slotscheck",
+    "src",
+  ],
+  [
+    "lint-imports",
+  ],
+  # Rules-database SAST. Deliberately style-env-only (like ty/pyrefly/zuban) and
+  # not a prek hook: semgrep keeps no on-disk rule cache, so a pre-commit hook
+  # would make a registry request on every `git commit`. The ruleset is named
+  # explicitly rather than `--config auto` so rule selection does not depend on
+  # language auto-detection; it is still fetched from the registry, which is why
+  # this cannot be vendored (see ADR-032). `--error` makes findings blocking;
+  # silence a false positive with a trailing `# nosemgrep: <rule-id>`.
+  [
+    "semgrep",
+    "scan",
+    "--config",
+    "p/python",
+    "--error",
+    "--metrics=off",
+    "src",
+  ],
+  [
+    "taplo",
+    "lint",
+    "*.toml",
+  ],
+  # A strict `--check` gate, not fix mode: a generated file that taplo would
+  # rewrite fails its own CI on first push and drifts on every `copier update`.
+  # `.taplo.toml` disables array auto expand/collapse so the shipped layout is
+  # the canonical one regardless of which components are enabled. The `*.toml`
+  # glob is non-recursive, so it scopes taplo to this project's own root TOML
+  # (pyproject/prek/mise/taplo) without walking vendored `.tox`/`.venv`/
+  # site-packages trees — no `.taplo.toml` exclude config needed.
+  [
+    "taplo",
+    "format",
+    "--check",
+    "--diff",
+    "*.toml",
+  ],
+  [
+    "typos",
+    "--diff",
+  ],
+  [
+    "ec",
+  ],
+  [
+    "sphinx-lint",
+    "docs",
+  ],
+  # Collects (does not run) the suite and flags fixtures that are never used --
+  # cheap, deterministic, and a natural fit next to the other whole-program
+  # analyzers above (lint-imports, slotscheck).
+  #
+  # Two workarounds live in this invocation, both project-specific:
+  # `-p no:inline_snapshot`: inline-snapshot 0.36 crashes any --dead-fixtures
+  # run at sessionfinish (`TypeError: cannot use 'list' as a set element`,
+  # still present at latest). The suite does not use snapshots; normal runs
+  # are unaffected.
+  # `-m ""`: the default addopts deselect `-m integration` (brokers needed),
+  # which would make the integration-only fixtures look dead and exit 11.
+  # The empty expression matches the whole suite so usage is measured across
+  # unit, smoke, AND integration tests (collection only — nothing connects).
+  [
+    "pytest",
+    "--dead-fixtures",
+    "-p",
+    "no:inline_snapshot",
+    "-m",
+    "",
+  ],
+]
+# `test` is included so the type checkers that scope tests (e.g. ty) can
+# resolve pytest and other test-only imports.
+dependency_groups = ["sast", "style", "test"]
+description = "Run Checkers, Linters and Formatters"
+runner = "uv-venv-lock-runner"
+
+
+[tool.tox.env.prek]
+commands = [["prek", "run", "--all-files"]]
+dependency_groups = ["prek"]
+description = "Run prek hooks"
+# The hooks that need the project call `uv run --locked`, which syncs it (and the
+# groups they name) into this env through the runner's UV_PROJECT_ENVIRONMENT;
+# installing the wheel here too would only be swapped for that install each run.
+package = "skip"
+runner = "uv-venv-lock-runner"
+
+
+[tool.tox.env.docs-build]
+# Write the warning stream to a file (`-w`) instead of `-W` turning the first
+# warning into a hard error, then let docs/check_warnings.py own the pass/fail:
+# it diffs the emitted warnings against the docs/expected_warnings.txt allowlist,
+# failing on both unexpected new warnings and expected ones that vanished.
+commands = [
+  ["sphinx-build", "-w", "docs/_build/warnings.txt", "-b", "html", "docs", "docs/_build/html"],
+  ["python", "docs/check_warnings.py"],
+]
+dependency_groups = ["docs"]
+description = "Build Docs"
+runner = "uv-venv-lock-runner"
+# Keep build log output unbuffered/ordered. Reproducible builds pin Sphinx's
+# "today"/copyright to SOURCE_DATE_EPOCH, which the CI docs steps
+# (docs-preview.yml, release.yml) export from the last commit date before
+# invoking sphinx-build directly. Local `tox` runs deliberately do NOT export
+# it: an empty value ("{env:SOURCE_DATE_EPOCH:}") is *present but blank*, which
+# breaks hatchling's get_reproducible_timestamp (`int("")`), so we leave it
+# unset locally and conf.py falls back to the current year.
+set_env = { PYTHONUNBUFFERED = "1" }
+
+
+[tool.tox.env.docs-server]
+# ``--ignore`` the machine-generated ``docs/_generated/`` tree: ``conf.py``
+# rewrites it on every Sphinx build, so watching it would make each rebuild
+# trigger the next in an endless live-reload loop.
+commands = [["sphinx-autobuild", "--ignore", "*/_generated/*", "docs", "docs/_build/html"]]
+dependency_groups = ["docs"]
+description = "Start the live-reloading docs server"
+runner = "uv-venv-lock-runner"
+set_env = { PYTHONUNBUFFERED = "1" }
+
+
+[tool.tox.env.docs-doctest]
+# ``literalinclude`` keeps complete examples in tested Python modules; this
+# separate builder executes the occasional ``>>>`` snippet that belongs inline
+# with prose.
+commands = [["sphinx-build", "-b", "doctest", "docs", "docs/_build/doctest"]]
+dependency_groups = ["docs"]
+description = "Run documentation doctests"
+runner = "uv-venv-lock-runner"
+set_env = { PYTHONUNBUFFERED = "1" }
+
+
+[tool.tox.env.docs-linkcheck]
+# On-demand link checker. Also run weekly (non-blocking) by docs-linkcheck.yml.
+# Hits the network, so it is deliberately not part of the `style` env or PR CI.
+commands = [["sphinx-build", "-b", "linkcheck", "docs", "docs/_build/linkcheck"]]
+dependency_groups = ["docs"]
+description = "Check documentation for broken links"
+runner = "uv-venv-lock-runner"
+set_env = { PYTHONUNBUFFERED = "1" }

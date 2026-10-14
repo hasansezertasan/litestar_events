@@ -49,4 +49,7 @@ repository:
   allow_merge_commit: false
   allow_rebase_merge: false
   delete_branch_on_merge: true
+  # Squash commit = the lint-validated PR title (release-please reads it).
+  squash_merge_commit_title: PR_TITLE
+  squash_merge_commit_message: BLANK
   has_issues: true

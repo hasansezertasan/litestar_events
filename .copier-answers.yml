@@ -29,9 +29,9 @@ include_profiling: false
 include_pydantic_settings: false
 include_pypi_publish: true
 include_redis: false
-include_repo_ruleset: false
-include_repo_settings: false
-include_smokeshow: false
+include_repo_ruleset: true
+include_repo_settings: true
+include_smokeshow: true
 include_sonarcloud: false
 include_sourcery: false
 include_tui: false
@@ -40,4 +40,7 @@ include_web: false
 include_worker: false
 package_keywords: litestar, events, emitter, async, backend
 preset: library
+repository_topics: litestar, litestar-api, litestar-extension, litestar-framework,
+    litestar-plugin, events, rabbitmq, kafka, confluent, mqtt, nats, postgresql, redis,
+    aws-sqs, google-pubsub, zeromq, python, asyncio, event-emitter
 short_description: Event Emitter Backends for Litestar.

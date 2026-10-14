@@ -354,6 +354,16 @@ jobs:
       - name: Note skipped coverage upload
         if: ${{ env.CODECOV_TOKEN_SET != 'true' && env.REPO_IS_PUBLIC != 'true' }}
         run: echo "::notice::CODECOV_TOKEN secret is not set and this repo is private — skipping the Codecov upload. See docs/maintaining/setup.rst (Repository setup) to enable coverage reporting."
+      - name: Publish coverage HTML (public repos)
+        # smokeshow uploads htmlcov to an ephemeral public URL and prints it — no
+        # account or secret required (an optional key only raises rate limits).
+        # Public repos only: a private report must not be published. Best-effort
+        # and ordered LAST — a tokenless rate-limit or outage must never fail the
+        # `check` gate nor block the authoritative Codecov/coverage.xml uploads
+        # above; smokeshow is a supplementary mirror, not load-bearing. See ADR-026.
+        if: ${{ env.REPO_IS_PUBLIC == 'true' }}
+        continue-on-error: true
+        run: uv run --no-project --with smokeshow smokeshow upload htmlcov
   integration:
     name: Integration tests (${{ matrix.backend }})
     # One job per backend. Each test starts its own broker container via

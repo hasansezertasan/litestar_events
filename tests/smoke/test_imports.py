@@ -51,3 +51,12 @@ def test_backend_constructs_with_empty_listeners(module_path, class_name) -> Non
     else:
         instance = cls([])
     assert isinstance(instance, BaseEventEmitterBackend)
+
+
+@pytest.mark.smoke
+def test_private_litestar_cli_names_exist() -> None:
+    """``_cli`` imports these from a private Litestar module; fail loudly if moved."""
+    from litestar.cli._utils import LitestarGroup, console
+
+    assert LitestarGroup
+    assert console

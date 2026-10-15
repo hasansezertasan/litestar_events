@@ -124,6 +124,7 @@ class RabbitEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         await queue.consume(self._on_message)
 
     async def __aexit__(self, exc_type: object, exc: object, tb: object) -> None:
+        await self._flush_publisher()
         if self._publisher_task is not None:
             self._publisher_task.cancel()
             with contextlib.suppress(asyncio.CancelledError):
@@ -154,6 +155,8 @@ class RabbitEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
                 )
             except Exception:
                 logger.exception("Failed to publish event %s", event_id)
+            finally:
+                queue.task_done()
 
     async def _on_message(self, message: AbstractIncomingMessage) -> None:
         try:

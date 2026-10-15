@@ -42,7 +42,7 @@ def resolve_role(role: EventsRole | str | None = None) -> EventsRole:
         raise ValueError(msg) from None
 
 
-@dataclass
+@dataclass(frozen=True)
 class EventsConfig:
     """Settings for :class:`~litestar_events.plugin.EventsPlugin`.
 
@@ -71,7 +71,22 @@ class EventsConfig:
     """Request header whose value becomes the correlation id of events emitted
     while serving the request (e.g. ``"x-request-id"``). ``None`` adds no
     middleware."""
+    request_id_exclude_path_pattern: str | tuple[str, ...] | None = None
+    """Regex (or regexes) of paths the request-id middleware skips, such as
+    ``"^/health"``. Routes can also opt out with
+    ``opt={"exclude_request_id": True}``."""
     echo_request_id: bool = True
     """Also set the request id on the response (needs ``request_id_header``)."""
     drain_timeout: float = 30.0
     """Default seconds ``events drain`` waits for in-flight listeners."""
+
+    def __post_init__(self) -> None:
+        if self.role is not None:
+            # Fail at construction, not when the emitter is built.
+            object.__setattr__(self, "role", resolve_role(self.role))
+        if self.drain_timeout <= 0:
+            msg = f"drain_timeout must be positive, got {self.drain_timeout!r}"
+            raise ValueError(msg)
+        if self.request_id_header is not None and not self.request_id_header.strip():
+            msg = "request_id_header must not be empty"
+            raise ValueError(msg)

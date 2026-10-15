@@ -4,16 +4,17 @@ import asyncio
 import contextlib
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 from litestar.events import BaseEventEmitterBackend, EventListener
 from typing_extensions import Self
 
 from litestar_events._queue import QueuedEmitterMixin, QueuePayload, require
+from litestar_events.context import outgoing_headers
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterable, Sequence
 
     from gcloud.aio.pubsub import PublisherClient, SubscriberClient, SubscriberMessage
 
@@ -24,6 +25,27 @@ __all__ = ["PubSubEventEmitter"]
 
 
 logger = logging.getLogger(__name__)
+
+# Event headers become Pub/Sub message attributes. ``data`` and ``ordering_key``
+# are named parameters of ``PubsubMessage``; ``event_id`` and ``content_type``
+# are set by the emitter itself, and ``self`` is the method's own first argument.
+# A header of the same name would clash. Pub/Sub also reserves the ``goog`` prefix.
+_RESERVED_ATTRIBUTES = frozenset({
+    "self",
+    "data",
+    "ordering_key",
+    "event_id",
+    "content_type",
+})
+_RESERVED_PREFIX = "goog"
+
+
+def _reserved(headers: Iterable[str]) -> list[str]:
+    return sorted(
+        name
+        for name in headers
+        if name in _RESERVED_ATTRIBUTES or name.lower().startswith(_RESERVED_PREFIX)
+    )
 
 
 class PubSubEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
@@ -100,6 +122,21 @@ class PubSubEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         self._publisher_task: asyncio.Task[None] | None = None
         self._consumer_task: asyncio.Task[None] | None = None
 
+    def emit(self, event_id: str, *args: Any, **kwargs: Any) -> None:
+        """Queue an event.
+
+        Raises:
+            ValueError: if an event header uses a name reserved for Pub/Sub.
+        """
+        reserved = _reserved(outgoing_headers())
+        if reserved:
+            msg = (
+                f"Event header(s) {reserved} are reserved by the Pub/Sub "
+                "backend; rename them"
+            )
+            raise ValueError(msg)
+        super().emit(event_id, *args, **kwargs)
+
     async def _ensure_topic(self) -> None:
         from aiohttp import ClientResponseError
 
@@ -141,10 +178,13 @@ class PubSubEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
             self._subscriber = SubscriberClient(api_root=api_root)
             if self._create_resources:
                 await self._ensure_subscription()
-            self._consumer_task = asyncio.create_task(self._run_subscribe())
+            self._consumer_task = self._watch(
+                asyncio.create_task(self._run_subscribe())
+            )
         return self
 
     async def __aexit__(self, exc_type: object, exc: object, tb: object) -> None:
+        await self._flush_publisher()
         for task in (self._publisher_task, self._consumer_task):
             if task is not None:
                 task.cancel()
@@ -192,6 +232,8 @@ class PubSubEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
                 )
             except Exception:
                 logger.exception("Failed to publish event %s", event_id)
+            finally:
+                queue.task_done()
 
     async def _run_subscribe(self) -> None:
         from gcloud.aio.pubsub import subscribe

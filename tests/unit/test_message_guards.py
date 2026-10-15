@@ -16,6 +16,7 @@ import json
 from types import SimpleNamespace
 from typing import Any, cast
 
+import pytest
 from litestar.events import listener
 
 
@@ -88,3 +89,43 @@ async def test_pubsub_drops_message_with_no_data() -> None:
         )
     )
     assert received == [(1,)]  # a real message still dispatches
+
+
+async def test_flush_publisher_waits_for_buffered_events() -> None:
+    import asyncio
+
+    from litestar_events._queue import QueuedEmitterMixin
+
+    class _Emitter(QueuedEmitterMixin):
+        _publisher_task: asyncio.Task[None] | None = None
+
+    emitter = _Emitter()
+    queue: asyncio.Queue[tuple[str, bytes, dict[str, str]]] = asyncio.Queue()
+    emitter._publish_queue = queue
+    sent: list[str] = []
+
+    async def publisher() -> None:
+        while True:
+            event_id, _, _ = await queue.get()
+            await asyncio.sleep(0.01)
+            sent.append(event_id)
+            queue.task_done()
+
+    task = emitter._publisher_task = asyncio.create_task(publisher())
+    queue.put_nowait(("a", b"", {}))
+    queue.put_nowait(("b", b"", {}))
+    await emitter._flush_publisher()
+    task.cancel()
+    assert sent == ["a", "b"]
+
+
+@pytest.mark.parametrize(
+    "name", ["self", "data", "ordering_key", "event_id", "content_type", "googclient"]
+)
+async def test_pubsub_rejects_reserved_header(name: str) -> None:
+    from litestar_events.context import event_headers
+    from litestar_events.contrib.pubsub.emitter import PubSubEventEmitter
+
+    emitter = PubSubEventEmitter([], project_id="p")
+    with event_headers({name: "x"}), pytest.raises(ValueError, match="reserved"):
+        emitter.emit("e")

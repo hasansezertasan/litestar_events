@@ -44,7 +44,7 @@ classifiers = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-  "litestar",
+  "litestar>=2.15", # ASGIMiddleware
 ]
 
 [project.optional-dependencies]
@@ -335,10 +335,13 @@ ignore_decorators = [
 # names (CSS/compose/on_mount/title/BINDINGS) are invoked by the TUI framework,
 # and ``pytestmark``/``pytest_*`` (conftest hooks) are consumed by pytest at
 # collection time.
-ignore_names = ["CONFIG_FILE_PATH", "logger", "main", "model_config", "pytest_*", "collect_ignore_glob", "_Bad"]
+ignore_names = ["CONFIG_FILE_PATH", "logger", "main", "model_config", "pytest_*", "collect_ignore_glob", "_Bad", "handle", "scopes", "exclude_opt_key"]
 # `_Bad` (tests/unit/test_emit_contract.py) is a deliberately invalid class
 # hierarchy whose *definition* inside `pytest.raises(TypeError)` is the test —
 # the name is never referenced again, which is exactly what vulture reports.
+# `handle`, `scopes` and `exclude_opt_key` are the hooks Litestar's
+# ``ASGIMiddleware`` reads from RequestIdMiddleware; vulture offers no
+# per-line suppression that ruff's blanket-noqa rule allows.
 min_confidence = 60
 paths = ["src", "tests"]
 

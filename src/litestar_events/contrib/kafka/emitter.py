@@ -130,7 +130,9 @@ class KafkaEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
                 enable_auto_commit=False,
             )
             await self._consumer.start()
-            self._consumer_task = asyncio.create_task(self._consumer_loop())
+            self._consumer_task = self._watch(
+                asyncio.create_task(self._consumer_loop())
+            )
 
         if self._publishes:
             self._publish_queue = asyncio.Queue()
@@ -138,6 +140,7 @@ class KafkaEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         return self
 
     async def __aexit__(self, exc_type: object, exc: object, tb: object) -> None:
+        await self._flush_publisher()
         for task in (self._publisher_task, self._consumer_task):
             if task is not None:
                 task.cancel()
@@ -168,6 +171,8 @@ class KafkaEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
                 )
             except Exception:
                 logger.exception("Failed to publish event %s", event_id)
+            finally:
+                queue.task_done()
 
     async def _consumer_loop(self) -> None:
         consumer = require(self._consumer, "Kafka consumer")

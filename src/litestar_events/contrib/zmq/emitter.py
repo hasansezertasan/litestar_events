@@ -104,7 +104,9 @@ class ZeroMQEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
                 self._sub.connect(addr)
             for event_id in self._by_event:
                 self._sub.setsockopt(zmq.SUBSCRIBE, event_id.encode())
-            self._consumer_task = asyncio.create_task(self._consumer_loop())
+            self._consumer_task = self._watch(
+                asyncio.create_task(self._consumer_loop())
+            )
 
         # PUB/SUB slow-joiner: give subscriptions time to propagate before the
         # first emit, otherwise early events are dropped.
@@ -116,6 +118,7 @@ class ZeroMQEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         return self
 
     async def __aexit__(self, exc_type: object, exc: object, tb: object) -> None:
+        await self._flush_publisher()
         for task in (self._publisher_task, self._consumer_task):
             if task is not None:
                 task.cancel()
@@ -134,6 +137,8 @@ class ZeroMQEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
                 await pub.send_multipart([event_id.encode(), body])
             except Exception:
                 logger.exception("Failed to publish event %s", event_id)
+            finally:
+                queue.task_done()
 
     async def _consumer_loop(self) -> None:
         sub = require(self._sub, "ZMQ subscriber socket")

@@ -34,7 +34,7 @@ def test_publish_queue_defaults_to_none() -> None:
     assert _emitter()._publish_queue is None
 
 
-def test_emit_after_teardown_raises() -> None:
+async def test_emit_after_teardown_raises() -> None:
     # _close_queue() (called from every backend's __aexit__) drops the queue,
     # so a late emit raises rather than silently buffering onto an abandoned
     # queue that no publisher task will ever drain.

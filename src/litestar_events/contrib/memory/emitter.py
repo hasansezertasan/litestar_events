@@ -53,7 +53,9 @@ class MemoryEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
     async def __aenter__(self) -> Self:
         self._publish_queue = asyncio.Queue()
         if self._consumes:
-            self._consumer_task = asyncio.create_task(self._consumer_loop())
+            self._consumer_task = self._watch(
+                asyncio.create_task(self._consumer_loop())
+            )
         return self
 
     async def __aexit__(self, exc_type: object, exc: object, tb: object) -> None:

@@ -65,6 +65,7 @@ async def test_producer_role_skips_consumer() -> None:
     emitter = RedisEventEmitter([on_ping], role="producer")
     client = MagicMock()
     client.aclose = AsyncMock()
+    client.ping = AsyncMock()
     client.pubsub.return_value = MagicMock(subscribe=AsyncMock(), aclose=AsyncMock())
     with patch("redis.asyncio.Redis.from_url", return_value=client):
         async with emitter:

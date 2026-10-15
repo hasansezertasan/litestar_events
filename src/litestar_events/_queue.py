@@ -3,20 +3,36 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
+import functools
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, TypeAlias, TypeVar, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Protocol,
+    TypeAlias,
+    TypeVar,
+    cast,
+    runtime_checkable,
+)
 
 from litestar_events.codec import Codec, JSONCodec, Message, listener_name
 from litestar_events.config import EventsRole, resolve_role
 from litestar_events.context import outgoing_correlation_id, outgoing_headers
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Mapping
+    from collections.abc import Awaitable, Callable, Iterable, Mapping
 
     from litestar.events import BaseEventEmitterBackend, EventListener
 
-__all__ = ["CORRELATION_HEADER", "QueuedEmitterMixin", "native_headers", "require"]
+__all__ = [
+    "CORRELATION_HEADER",
+    "QueuedEmitterMixin",
+    "RoleAwareEmitter",
+    "native_headers",
+    "require",
+]
 
 
 _T = TypeVar("_T")
@@ -43,6 +59,90 @@ def native_headers(
     """
     rest = {k: v for k, v in metadata.items() if k.lower() != "content-type"}
     return {key: content_type, **rest}
+
+
+@runtime_checkable
+class RoleAwareEmitter(Protocol):
+    """What the ``events`` CLI needs from an emitter beyond Litestar's own API.
+
+    :class:`QueuedEmitterMixin` satisfies it; a custom backend can too.
+    """
+
+    durable: bool
+    process_local: bool
+
+    @property
+    def role(self) -> EventsRole:
+        """The effective role of this emitter."""
+        raise NotImplementedError
+
+    @property
+    def local_listeners(self) -> frozenset[EventListener]:
+        """Listeners marked to run in the producer process."""
+        raise NotImplementedError
+
+    @property
+    def codec(self) -> Codec:
+        """The codec encoding and decoding events."""
+        raise NotImplementedError
+
+    def use_codec(self, codec: Codec) -> None:
+        """Replace the codec, before the async context is entered."""
+
+    def use_role(self, role: EventsRole | str) -> None:
+        """Set the role explicitly, before the async context is entered."""
+
+    def set_local_listeners(self, listeners: Iterable[EventListener]) -> None:
+        """Mark listeners that run in the producer process."""
+
+
+def _guard_enter(
+    enter: Callable[[Any], Awaitable[Any]],
+) -> Callable[[Any], Awaitable[Any]]:
+    """Run ``__aexit__`` when ``__aenter__`` fails halfway.
+
+    Litestar does not call ``__aexit__`` for a backend whose ``__aenter__``
+    raised, so clients and tasks started before the failure would leak.
+
+    A subclass overriding ``__aenter__`` is wrapped on top of its parent's
+    wrapper; only the outermost one tears down, so it runs exactly once.
+    """
+
+    @functools.wraps(enter)
+    async def wrapper(self: QueuedEmitterMixin) -> Any:
+        self._loop = asyncio.get_running_loop()  # pylint: disable=protected-access  # module-level wrapper for the mixin
+        nested = self._entering  # pylint: disable=protected-access  # module-level wrapper for the mixin
+        self._entering = True  # pylint: disable=protected-access  # module-level wrapper for the mixin
+        try:
+            return await enter(self)
+        except BaseException:
+            if not nested:
+                with contextlib.suppress(Exception):
+                    await cast("Any", self).__aexit__(None, None, None)
+            raise
+        finally:
+            if not nested:
+                self._entering = False  # pylint: disable=protected-access  # module-level wrapper for the mixin
+
+    return wrapper
+
+
+def _guard_exit(
+    exit_: Callable[..., Awaitable[None]],
+) -> Callable[..., Awaitable[None]]:
+    """Let local listener tasks finish before the backend tears down."""
+
+    @functools.wraps(exit_)
+    async def wrapper(
+        self: QueuedEmitterMixin, exc_type: object, exc: object, tb: object
+    ) -> None:
+        try:
+            await self._finish_local_tasks()  # pylint: disable=protected-access  # module-level wrapper for the mixin
+        finally:
+            self._loop = None  # pylint: disable=protected-access  # module-level wrapper for the mixin
+            await exit_(self, exc_type, exc, tb)
+
+    return wrapper
 
 
 def require(value: _T | None, name: str) -> _T:
@@ -90,6 +190,12 @@ class QueuedEmitterMixin:
     _role: EventsRole = EventsRole.EMBEDDED
     _codec: Codec = JSONCodec()
     _local: frozenset[EventListener] = frozenset()
+    #: The loop the emitter's async context runs on; ``emit`` may be called from
+    #: another thread (a sync handler) and hands work to this loop.
+    _loop: asyncio.AbstractEventLoop | None = None
+    _local_tasks: set[asyncio.Task[None]]
+    #: ``True`` while the outermost ``__aenter__`` wrapper is running.
+    _entering: bool = False
     # Per-event listeners this process consumes from the broker; set by each
     # backend's ``__init__`` and recomputed by ``_apply_placement``.
     _by_event: dict[str, list[EventListener]]
@@ -106,6 +212,20 @@ class QueuedEmitterMixin:
     @property
     def _consumes(self) -> bool:
         return self._role is not EventsRole.PRODUCER
+
+    @property
+    def local_listeners(self) -> frozenset[EventListener]:
+        """Listeners marked to run in the producer process."""
+        return self._local
+
+    @property
+    def codec(self) -> Codec:
+        """The codec encoding and decoding events."""
+        return self._codec
+
+    def use_codec(self, codec: Codec) -> None:
+        """Replace the codec, before the async context is entered."""
+        self._codec = codec
 
     def use_role(self, role: EventsRole | str) -> None:
         """Set the role explicitly, replacing the configured one.
@@ -144,7 +264,7 @@ class QueuedEmitterMixin:
 
     def _init_role(self, role: EventsRole | str | None) -> None:
         self._role = resolve_role(role)
-        self._local_tasks: set[asyncio.Task[None]] = set()
+        self._local_tasks = set()
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         # The MRO ordering (mixin before the ABC) is not type-checkable, so
@@ -153,6 +273,13 @@ class QueuedEmitterMixin:
         # ``TypeError`` at first instantiation instead of failing loudly here.
         super().__init_subclass__(**kwargs)
         from litestar.events import BaseEventEmitterBackend
+
+        # Wrap only what this class itself defines; inherited methods are
+        # already wrapped on the class that defined them.
+        if "__aenter__" in cls.__dict__:
+            setattr(cls, "__aenter__", _guard_enter(cls.__dict__["__aenter__"]))  # noqa: B010
+        if "__aexit__" in cls.__dict__:
+            setattr(cls, "__aexit__", _guard_exit(cls.__dict__["__aexit__"]))  # noqa: B010
 
         mro = cls.__mro__
         if BaseEventEmitterBackend in mro and mro.index(QueuedEmitterMixin) > mro.index(
@@ -184,7 +311,38 @@ class QueuedEmitterMixin:
         metadata = {**headers}
         if correlation_id:
             metadata[CORRELATION_HEADER] = correlation_id
-        self._publish_queue.put_nowait((event_id, body, metadata))
+        self._dispatch(event_id, body, metadata)
+
+    def _dispatch(self, event_id: str, body: bytes, metadata: dict[str, str]) -> None:
+        """Hand the event to the emitter's loop, from whichever thread called.
+
+        Events handed over from another thread just before shutdown, or after
+        the emitter's loop has closed, may be lost or raise ``RuntimeError``.
+
+        Raises:
+            RuntimeError: if the emitter has no loop, i.e. is not entered.
+        """
+        try:
+            running: asyncio.AbstractEventLoop | None = asyncio.get_running_loop()
+        except RuntimeError:
+            running = None
+        loop = self._loop or running
+        if loop is None:
+            msg = "Emitter used outside its async context"
+            raise RuntimeError(msg)
+        if loop is running:
+            self._enqueue(event_id, body, metadata)
+        else:
+            # A sync handler runs in a worker thread; ``asyncio.Queue`` and
+            # task creation are only safe on the emitter's own loop.
+            loop.call_soon_threadsafe(self._enqueue, event_id, body, metadata)
+
+    def _enqueue(self, event_id: str, body: bytes, metadata: dict[str, str]) -> None:
+        queue = self._publish_queue
+        if queue is None:
+            logger.warning("Dropping event %s emitted during shutdown", event_id)
+            return
+        queue.put_nowait((event_id, body, metadata))
         if self._role is EventsRole.PRODUCER and self._local:
             self._spawn_local(event_id, body)
 
@@ -196,9 +354,7 @@ class QueuedEmitterMixin:
         ]
         if not listeners:
             return
-        task = asyncio.get_running_loop().create_task(
-            self._run_local(event_id, body, listeners)
-        )
+        task = asyncio.create_task(self._run_local(event_id, body, listeners))
         self._local_tasks.add(task)
         task.add_done_callback(self._local_tasks.discard)
 
@@ -225,6 +381,40 @@ class QueuedEmitterMixin:
                     exc_info=result,
                 )
 
+    async def _flush_publisher(self, timeout: float = 5.0) -> None:
+        """Give buffered events up to ``timeout`` seconds to reach the broker.
+
+        Backends call this from ``__aexit__`` before cancelling the publisher
+        task, so events emitted just before shutdown are not silently dropped.
+        Publisher loops mark each item done with ``queue.task_done()``.
+        """
+        queue = self._publish_queue
+        task = getattr(self, "_publisher_task", None)
+        if queue is None or task is None or task.done():
+            return
+        try:
+            await asyncio.wait_for(queue.join(), timeout)
+        except asyncio.TimeoutError:
+            logger.warning(
+                "Shutting down with %d unpublished event(s) after %gs",
+                queue.qsize(),
+                timeout,
+            )
+
+    @staticmethod
+    def _watch(task: asyncio.Task[None]) -> asyncio.Task[None]:
+        """Log a background task's failure instead of letting it die silently."""
+
+        def _log(done: asyncio.Task[None]) -> None:
+            if done.cancelled():
+                return
+            exc = done.exception()
+            if exc is not None:
+                logger.error("Event consumer task stopped: %r", exc, exc_info=exc)
+
+        task.add_done_callback(_log)
+        return task
+
     def _close_queue(self) -> None:
         """Drop the publish queue so a post-teardown ``emit`` raises again.
 
@@ -234,5 +424,19 @@ class QueuedEmitterMixin:
         buffering onto an abandoned queue that nothing will drain.
         """
         self._publish_queue = None
-        for task in self._local_tasks:
+
+    async def _finish_local_tasks(self, timeout: float = 5.0) -> None:
+        """Wait up to ``timeout`` seconds for local listeners, then cancel them."""
+        tasks = set(self._local_tasks)
+        if not tasks:
+            return
+        _, pending = await asyncio.wait(tasks, timeout=timeout)
+        if pending:
+            logger.warning(
+                "Cancelling %d local listener(s) still running after %gs",
+                len(pending),
+                timeout,
+            )
+        for task in pending:
             task.cancel()
+        await asyncio.gather(*pending, return_exceptions=True)

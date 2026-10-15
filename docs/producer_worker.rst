@@ -225,7 +225,9 @@ The middleware (:class:`~litestar_events.middleware.RequestIdMiddleware`) is
 added outermost. A missing id, or one that is not 1-128 characters of
 ``A-Z a-z 0-9 . _ -``, is replaced by a generated one. The id is echoed on the
 response unless ``echo_request_id=False``. Without ``request_id_header`` no
-middleware is added.
+middleware is added. Skip routes such as health checks with
+``request_id_exclude_path_pattern="^/health"``, or per route with
+``opt={"exclude_request_id": True}``.
 
 A custom codec implements ``encode(Message)``, ``decode(data) -> Message`` and
 ``invoke(fn, event_id, message)``, where

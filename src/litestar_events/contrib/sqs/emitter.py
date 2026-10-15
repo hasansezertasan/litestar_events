@@ -36,6 +36,8 @@ class SQSEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         matching in-process listeners run, so a crash mid-dispatch leaves the
         message to reappear after its visibility timeout.
       - Listener exceptions are caught per-listener; siblings still complete.
+      - Messages of a received batch (up to 10) are handled concurrently, so
+        ordering is not preserved; FIFO queues are not supported.
       - Unparseable messages are deleted with a logged error. Configure a
         redrive policy (DLQ) on the queue if you need to retain poison
         messages instead of dropping them.
@@ -148,10 +150,13 @@ class SQSEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
             self._publish_queue = asyncio.Queue()
             self._publisher_task = asyncio.create_task(self._publisher_loop())
         if self._by_event and self._consumes:
-            self._consumer_task = asyncio.create_task(self._consumer_loop())
+            self._consumer_task = self._watch(
+                asyncio.create_task(self._consumer_loop())
+            )
         return self
 
     async def __aexit__(self, exc_type: object, exc: object, tb: object) -> None:
+        await self._flush_publisher()
         for task in (self._publisher_task, self._consumer_task):
             if task is not None:
                 task.cancel()
@@ -175,6 +180,8 @@ class SQSEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
                 )
             except Exception:
                 logger.exception("Failed to publish event %s", event_id)
+            finally:
+                queue.task_done()
 
     def _attributes(self, event_id: str, meta: dict[str, str]) -> dict[str, Any]:
         # SQS allows 10 message attributes, so only the correlation id travels
@@ -211,8 +218,17 @@ class SQSEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
                 logger.exception("SQS receive failed; backing off")
                 await asyncio.sleep(1)
                 continue
-            for message in resp.get("Messages", []):
-                await self._handle_message(message)
+            # Concurrent, so a slow listener does not eat into the visibility
+            # timeout of the rest of the batch. The cost: messages within a
+            # batch are not handled in order.
+            results = await asyncio.gather(
+                *(self._handle_message(m) for m in resp.get("Messages", [])),
+                return_exceptions=True,
+            )
+            for result in results:
+                if isinstance(result, Exception):
+                    # Left undeleted, so SQS redelivers it after the timeout.
+                    logger.error("Failed to handle SQS message", exc_info=result)
 
     async def _handle_message(self, message: dict[str, Any]) -> None:
         receipt = message["ReceiptHandle"]

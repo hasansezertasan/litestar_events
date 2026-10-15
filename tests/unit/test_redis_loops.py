@@ -63,6 +63,9 @@ class _FakeRedis:
         self.aclosed = False
         self.publish_error: Exception | None = None
 
+    async def ping(self) -> bool:
+        return True
+
     def pubsub(self) -> _FakePubSub:
         return self.pubsub_obj
 

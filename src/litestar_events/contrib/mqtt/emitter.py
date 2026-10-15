@@ -153,7 +153,9 @@ class MQTTEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
                 await self._client.subscribe(self._topic(event_id), qos=self._qos)
 
         if self._by_event and self._consumes:
-            self._consumer_task = asyncio.create_task(self._consumer_loop())
+            self._consumer_task = self._watch(
+                asyncio.create_task(self._consumer_loop())
+            )
 
         if self._publishes:
             self._publish_queue = asyncio.Queue()
@@ -161,6 +163,7 @@ class MQTTEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         return self
 
     async def __aexit__(self, exc_type: object, exc: object, tb: object) -> None:
+        await self._flush_publisher()
         for task in (self._publisher_task, self._consumer_task):
             if task is not None:
                 task.cancel()
@@ -184,6 +187,8 @@ class MQTTEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
                 )
             except Exception:
                 logger.exception("Failed to publish event %s", event_id)
+            finally:
+                queue.task_done()
 
     def _properties(self, meta: dict[str, str]) -> Any:
         """MQTT 5 content type and user properties; ``None`` below v5."""

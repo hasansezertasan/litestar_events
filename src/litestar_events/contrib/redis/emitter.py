@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from redis.asyncio import Redis
     from redis.asyncio.client import PubSub
 
-    from litestar_events.codec import Codec
+    from litestar_events.codec import Codec, Message
     from litestar_events.config import EventsRole
 
 __all__ = ["RedisEventEmitter"]
@@ -34,6 +34,9 @@ class RedisEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         is connected are lost; Redis Pub/Sub has no buffer or persistence.
       - Listener exceptions are caught per-listener; siblings still complete.
       - Every app instance receives every event (broadcast/fanout).
+      - Events are dispatched one at a time, in arrival order: the listeners of
+        an event run concurrently, but the next event waits for all of them.
+        A slow listener delays later events on this subscriber.
 
     Channel layout:
       - One Redis channel per registered event id: ``f"{channel_prefix}{event_id}"``.
@@ -83,12 +86,16 @@ class RedisEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         from redis.asyncio import Redis
 
         self._client = Redis.from_url(self._redis_url)
+        # ``from_url`` connects lazily; ping so an unreachable broker fails here.
+        await self._client.ping()
         self._pubsub = self._client.pubsub()
 
         channels = [self._channel(event_id) for event_id in self._by_event]
         if channels and self._consumes:
             await self._pubsub.subscribe(*channels)
-            self._consumer_task = asyncio.create_task(self._consumer_loop())
+            self._consumer_task = self._watch(
+                asyncio.create_task(self._consumer_loop())
+            )
 
         if self._publishes:
             self._publish_queue = asyncio.Queue()
@@ -96,6 +103,7 @@ class RedisEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         return self
 
     async def __aexit__(self, exc_type: object, exc: object, tb: object) -> None:
+        await self._flush_publisher()
         for task in (self._publisher_task, self._consumer_task):
             if task is not None:
                 task.cancel()
@@ -116,6 +124,8 @@ class RedisEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
                 await client.publish(self._channel(event_id), body)
             except Exception:
                 logger.exception("Failed to publish event %s", event_id)
+            finally:
+                queue.task_done()
 
     async def _consumer_loop(self) -> None:
         pubsub = require(self._pubsub, "Redis pubsub")
@@ -140,17 +150,18 @@ class RedisEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
             listeners = self._by_event.get(event_id, [])
             if not listeners:
                 continue
-
-            async def _run_one(listener: EventListener) -> None:
-                try:
-                    await self._codec.invoke(listener.fn, event_id, event)
-                except Exception:
-                    logger.exception(
-                        "Listener %s failed for event %s",
-                        getattr(listener.fn, "__name__", repr(listener.fn)),
-                        event_id,
-                    )
-
             await asyncio.gather(
-                *(_run_one(listener) for listener in listeners), return_exceptions=True
+                *(self._run_one(listener, event_id, event) for listener in listeners)
+            )
+
+    async def _run_one(
+        self, listener: EventListener, event_id: str, event: Message
+    ) -> None:
+        try:
+            await self._codec.invoke(listener.fn, event_id, event)
+        except Exception:
+            logger.exception(
+                "Listener %s failed for event %s",
+                getattr(listener.fn, "__name__", repr(listener.fn)),
+                event_id,
             )

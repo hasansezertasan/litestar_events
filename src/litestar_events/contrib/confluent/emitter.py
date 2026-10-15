@@ -147,7 +147,9 @@ class ConfluentEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
                 self._consumer.subscribe,
                 [self._topic(event_id) for event_id in self._by_event],
             )
-            self._consumer_task = asyncio.create_task(self._consumer_loop())
+            self._consumer_task = self._watch(
+                asyncio.create_task(self._consumer_loop())
+            )
 
         if self._publishes:
             self._publish_queue = asyncio.Queue()
@@ -158,6 +160,7 @@ class ConfluentEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
     async def __aexit__(self, exc_type: object, exc: object, tb: object) -> None:
         self._stopping = True
 
+        await self._flush_publisher()
         if self._publisher_task is not None:
             self._publisher_task.cancel()
             with contextlib.suppress(asyncio.CancelledError):
@@ -223,6 +226,8 @@ class ConfluentEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
                     producer.produce(self._topic(event_id), value=body, headers=headers)
             except Exception:
                 logger.exception("Failed to publish event %s", event_id)
+            finally:
+                queue.task_done()
 
     async def _consumer_loop(self) -> None:
         from confluent_kafka import KafkaError, KafkaException

@@ -14,7 +14,6 @@ from click.testing import CliRunner
 from litestar import Litestar
 from litestar.events import BaseEventEmitterBackend, listener
 from litestar.exceptions import ImproperlyConfiguredException
-from litestar.middleware import DefineMiddleware
 from typing_extensions import Self
 
 from litestar_events import _cli
@@ -140,8 +139,8 @@ def test_info_lists_events() -> None:
 def test_plugin_adds_request_id_middleware() -> None:
     app = Litestar(plugins=[EventsPlugin(EventsConfig(request_id_header="x-trace"))])
     first = app.middleware[0]
-    assert isinstance(first, DefineMiddleware)
-    assert first.middleware is RequestIdMiddleware
+    assert isinstance(first, RequestIdMiddleware)
+    assert first.header == "x-trace"
 
 
 def test_plugin_rejects_local_listeners_on_unsupported_backend() -> None:
@@ -181,7 +180,7 @@ async def _run_middleware(
     async def receive() -> dict[str, Any]:
         return {}
 
-    await RequestIdMiddleware(inner, **kw)(
+    await RequestIdMiddleware(**kw)(inner)(
         cast("Any", scope), cast("Any", receive), send
     )
 
@@ -272,6 +271,22 @@ async def test_closing_cancels_pending_local_tasks() -> None:
     emitter = _producer(on_ping)
     task = asyncio.get_running_loop().create_task(asyncio.sleep(60))
     emitter._local_tasks.add(task)
-    emitter._close_queue()
-    await asyncio.gather(task, return_exceptions=True)
+    await emitter._finish_local_tasks(timeout=0.05)
     assert task.cancelled()
+
+
+async def test_closing_waits_for_running_local_tasks() -> None:
+    @listener("ping")
+    async def on_ping() -> None: ...
+
+    emitter = _producer(on_ping)
+    done: list[bool] = []
+
+    async def slow() -> None:
+        await asyncio.sleep(0.05)
+        done.append(True)
+
+    task = asyncio.get_running_loop().create_task(slow())
+    emitter._local_tasks.add(task)
+    await emitter._finish_local_tasks(timeout=5)
+    assert done == [True]

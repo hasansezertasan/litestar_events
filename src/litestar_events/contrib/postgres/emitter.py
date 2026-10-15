@@ -131,7 +131,9 @@ class PostgresEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
 
         require(self._pool, "connection pool")
         if self._by_event and self._consumes:
-            self._consumer_task = asyncio.create_task(self._consumer_loop())
+            self._consumer_task = self._watch(
+                asyncio.create_task(self._consumer_loop())
+            )
 
         if self._publishes:
             self._publish_queue = asyncio.Queue()
@@ -139,6 +141,7 @@ class PostgresEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         return self
 
     async def __aexit__(self, exc_type: object, exc: object, tb: object) -> None:
+        await self._flush_publisher()
         for task in (self._publisher_task, self._consumer_task):
             if task is not None:
                 task.cancel()
@@ -161,6 +164,8 @@ class PostgresEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
                     )
             except Exception:
                 logger.exception("Failed to publish event %s", event_id)
+            finally:
+                queue.task_done()
 
     async def _consumer_loop(self) -> None:
         from psycopg.sql import SQL, Identifier

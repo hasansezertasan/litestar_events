@@ -16,13 +16,16 @@ from litestar.cli._utils import (  # noqa: PLC2701  # no public API for CLI grou
     console,
 )
 
+from litestar_events._queue import RoleAwareEmitter
 from litestar_events.config import EventsConfig, EventsRole
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Awaitable, Callable, Iterator
 
     from litestar import Litestar
     from litestar.events import BaseEventEmitterBackend, EventListener
+
+    from litestar_events.codec import Codec, Message
 
 __all__ = ["events_group"]
 
@@ -49,8 +52,38 @@ class _Activity:
 
         return tracked
 
+    def track(self, codec: Codec) -> Codec:
+        """Wrap ``codec`` so the listener invocations it makes are counted."""
+        return _TrackedCodec(codec, self)
+
     def idle_for(self) -> float:
         return 0.0 if self.in_flight else time.monotonic() - self.last
+
+
+class _TrackedCodec:
+    """Delegates to ``inner`` and reports listener calls to an :class:`_Activity`."""
+
+    def __init__(self, inner: Codec, activity: _Activity) -> None:
+        self._inner = inner
+        self._activity = activity
+        self.content_type = inner.content_type
+
+    def __getattr__(self, name: str) -> Any:
+        # Anything beyond the protocol (e.g. ``JSONCodec.typed``) is the inner codec's.
+        if name.startswith("_"):  # not yet set (copy/unpickle): avoid recursing
+            raise AttributeError(name)
+        return getattr(self._inner, name)
+
+    def encode(self, message: Message) -> bytes:
+        return self._inner.encode(message)
+
+    def decode(self, data: bytes | str) -> Message:
+        return self._inner.decode(data)
+
+    def invoke(
+        self, fn: Callable[..., Awaitable[Any]], event_id: str, message: Message
+    ) -> Awaitable[Any]:
+        return self._activity.wrap(self._inner.invoke)(fn, event_id, message)
 
 
 def _listeners(emitter: BaseEventEmitterBackend) -> set[EventListener]:
@@ -62,13 +95,15 @@ def _emitter(app: Litestar) -> BaseEventEmitterBackend:
 
 
 def _require_shareable(emitter: BaseEventEmitterBackend) -> None:
-    if getattr(emitter, "process_local", False):
+    if not isinstance(emitter, RoleAwareEmitter):
+        return
+    if emitter.process_local:
         msg = (
             f"{type(emitter).__name__} is process-local: a separate worker would "
             "never see events emitted by the web process. Use a broker backend."
         )
         raise click.UsageError(msg)
-    if not getattr(emitter, "durable", True):
+    if not emitter.durable:
         console.print(
             f"[yellow]Warning: {type(emitter).__name__} is not durable; events "
             "emitted while no worker is connected are lost.[/]"
@@ -76,11 +111,10 @@ def _require_shareable(emitter: BaseEventEmitterBackend) -> None:
 
 
 def _set_role(emitter: BaseEventEmitterBackend, role: EventsRole) -> None:
-    use_role = getattr(emitter, "use_role", None)
-    if use_role is None:
+    if not isinstance(emitter, RoleAwareEmitter):
         msg = f"{type(emitter).__name__} does not support roles"
         raise click.UsageError(msg)
-    use_role(role)
+    emitter.use_role(role)
 
 
 def _as_worker(emitter: BaseEventEmitterBackend) -> None:
@@ -102,15 +136,41 @@ async def _serve(app: Litestar) -> None:
         console.print("[yellow]Shutting down...[/]")
 
 
+@contextlib.contextmanager
+def _tracking(emitter: BaseEventEmitterBackend, activity: _Activity) -> Iterator[None]:
+    """Count listener invocations of ``emitter`` for the duration of the block.
+
+    A role-aware emitter runs listeners through its codec, so the codec is
+    wrapped. Any other backend gets its listener functions wrapped instead.
+    Both are restored on exit.
+    """
+    if isinstance(emitter, RoleAwareEmitter):
+        original = emitter.codec
+        emitter.use_codec(activity.track(original))
+        try:
+            yield
+        finally:
+            emitter.use_codec(original)
+        return
+    listeners = _listeners(emitter)
+    originals = {item: item.fn for item in listeners}
+    for item, fn in originals.items():
+        item.fn = activity.wrap(fn)
+    try:
+        yield
+    finally:
+        for item, fn in originals.items():
+            item.fn = fn
+
+
 async def _drain(app: Litestar, timeout: float) -> None:
     activity = _Activity()
-    for listener in _listeners(_emitter(app)):
-        listener.fn = activity.wrap(listener.fn)
-    async with app.lifespan():
-        console.print(f"Draining until idle for {timeout:g}s...")
-        # Polls listener activity, which has no event to wait on.
-        while activity.idle_for() < timeout:  # noqa: ASYNC110
-            await asyncio.sleep(min(0.2, timeout))
+    with _tracking(_emitter(app), activity):
+        async with app.lifespan():
+            console.print(f"Draining until idle for {timeout:g}s...")
+            # Polls listener activity, which has no event to wait on.
+            while activity.idle_for() < timeout:  # noqa: ASYNC110
+                await asyncio.sleep(min(0.2, timeout))
 
 
 async def _status(app: Litestar) -> None:
@@ -121,15 +181,19 @@ async def _status(app: Litestar) -> None:
 
 
 def _info_rows(emitter: BaseEventEmitterBackend) -> list[tuple[str, str]]:
-    events = sorted(emitter.listeners)
+    # Defaults of ``QueuedEmitterMixin`` for a backend that is not role-aware.
+    role, durable, process_local, local = EventsRole.EMBEDDED, True, False, 0
+    if isinstance(emitter, RoleAwareEmitter):
+        role, durable = emitter.role, emitter.durable
+        process_local, local = emitter.process_local, len(emitter.local_listeners)
     return [
         ("Backend", type(emitter).__name__),
-        ("Role", str(getattr(emitter, "role", EventsRole.EMBEDDED).value)),
-        ("Durable", str(getattr(emitter, "durable", True))),
-        ("Process-local", str(getattr(emitter, "process_local", False))),
+        ("Role", str(role.value)),
+        ("Durable", str(durable)),
+        ("Process-local", str(process_local)),
         ("Listeners", str(len(_listeners(emitter)))),
-        ("Local listeners", str(len(getattr(emitter, "_local", ())))),
-        ("Events", ", ".join(events) or "-"),
+        ("Local listeners", str(local)),
+        ("Events", ", ".join(sorted(emitter.listeners)) or "-"),
     ]
 
 
@@ -164,7 +228,9 @@ def drain_command(app: Litestar, timeout: float | None) -> None:
 
 
 def _default_timeout(app: Litestar) -> float:
-    for plugin in app.plugins.cli:
+    # By config type, since the plugin module imports this one; this also
+    # finds a subclass of the plugin.
+    for plugin in app.plugins.init:
         config = getattr(plugin, "config", None)
         if isinstance(config, EventsConfig):
             return config.drain_timeout

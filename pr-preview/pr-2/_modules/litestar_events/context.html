@@ -137,7 +137,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="17"><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span>
 </span><span data-line="18">
 </span><span data-line="19"><span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
-</span><span data-line="20">    <span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">Mapping</span>
+</span><span data-line="20">    <span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Generator</span><span class="p">,</span> <span class="n">Mapping</span>
 </span><span data-line="21">
 </span><span data-line="22"><span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
 </span><span data-line="23">    <span class="s2">"EventContext"</span><span class="p">,</span>
@@ -205,7 +205,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="74">    <span class="o">*</span><span class="p">,</span>
 </span><span data-line="75">    <span class="n">correlation_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span data-line="76">    <span class="o">**</span><span class="n">extra</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-</span><span data-line="77"><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="kc">None</span><span class="p">]:</span>
+</span><span data-line="77"><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
 </span><span data-line="78"><span class="w">    </span><span class="sd">"""Attach headers (and optionally a correlation id) to events emitted inside.</span>
 </span><span data-line="79">
 </span><span data-line="80"><span class="sd">    Nested blocks merge, inner values winning. Header names and values are</span>
@@ -238,7 +238,7 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="use_event">
 <a class="viewcode-back" href="../../modules.html#litestar_events.context.use_event">[docs]</a>
 </span><span data-line="106"><span class="nd">@contextmanager</span>
-</span><span data-line="107"><span class="k">def</span><span class="w"> </span><span class="nf">use_event</span><span class="p">(</span><span class="n">context</span><span class="p">:</span> <span class="n">EventContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="kc">None</span><span class="p">]:</span>
+</span><span data-line="107"><span class="k">def</span><span class="w"> </span><span class="nf">use_event</span><span class="p">(</span><span class="n">context</span><span class="p">:</span> <span class="n">EventContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
 </span><span data-line="108"><span class="w">    </span><span class="sd">"""Make ``context`` the current event; used while a listener runs."""</span>
 </span><span data-line="109">    <span class="n">token</span> <span class="o">=</span> <span class="n">_current</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
 </span><span data-line="110">    <span class="k">try</span><span class="p">:</span>

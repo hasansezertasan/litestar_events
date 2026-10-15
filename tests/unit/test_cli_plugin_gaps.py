@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import contextlib
 import os
 import signal
 import sys
@@ -311,6 +310,5 @@ async def test_wait_for_signal_restores_fallback_handlers(
     await asyncio.sleep(0.05)
     assert signal.getsignal(signal.SIGTERM) is not before
     task.cancel()
-    with contextlib.suppress(asyncio.CancelledError):
-        await task
+    await asyncio.gather(task, return_exceptions=True)
     assert signal.getsignal(signal.SIGTERM) is before

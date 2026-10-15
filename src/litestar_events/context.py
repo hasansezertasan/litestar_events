@@ -17,7 +17,7 @@ from types import MappingProxyType
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Mapping
+    from collections.abc import Generator, Mapping
 
 __all__ = [
     "EventContext",
@@ -74,7 +74,7 @@ def event_headers(
     *,
     correlation_id: str | None = None,
     **extra: str,
-) -> Iterator[None]:
+) -> Generator[None, None, None]:
     """Attach headers (and optionally a correlation id) to events emitted inside.
 
     Nested blocks merge, inner values winning. Header names and values are
@@ -104,7 +104,7 @@ def event_headers(
 
 
 @contextmanager
-def use_event(context: EventContext) -> Iterator[None]:
+def use_event(context: EventContext) -> Generator[None, None, None]:
     """Make ``context`` the current event; used while a listener runs."""
     token = _current.set(context)
     try:

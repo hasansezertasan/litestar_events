@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import os
 import signal
+import sys
 from pathlib import Path
 from typing import Any, cast
 
@@ -101,6 +102,9 @@ async def test_serve_waits_for_signal_then_stops(
     await _cli._serve(_app(_Shared))
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32", reason="os.kill(SIGTERM) terminates the process on Windows"
+)
 async def test_wait_for_signal_returns_on_sigterm() -> None:
     asyncio.get_running_loop().call_later(0.05, os.kill, os.getpid(), signal.SIGTERM)
     await asyncio.wait_for(_cli._wait_for_signal(), timeout=5)

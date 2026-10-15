@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
-import json
 import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING
@@ -17,6 +16,9 @@ if TYPE_CHECKING:
 
     from redis.asyncio import Redis
     from redis.asyncio.client import PubSub
+
+    from litestar_events.codec import Codec
+    from litestar_events.config import EventsRole
 
 __all__ = ["RedisEventEmitter"]
 
@@ -46,14 +48,20 @@ class RedisEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
       - external producers emitting arbitrary event ids (use ``litestar-channels``).
     """
 
+    durable = False
+
     def __init__(
         self,
         listeners: Sequence[EventListener],
         *,
+        role: EventsRole | str | None = None,
+        codec: Codec | None = None,
         redis_url: str = "redis://localhost:6379/0",
         channel_prefix: str = "litestar.events:",
     ) -> None:
         super().__init__(listeners)
+        self._init_role(role)
+        self._init_codec(codec)
         self._redis_url = redis_url
         self._channel_prefix = channel_prefix
 
@@ -78,12 +86,13 @@ class RedisEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         self._pubsub = self._client.pubsub()
 
         channels = [self._channel(event_id) for event_id in self._by_event]
-        if channels:
+        if channels and self._consumes:
             await self._pubsub.subscribe(*channels)
             self._consumer_task = asyncio.create_task(self._consumer_loop())
 
-        self._publish_queue = asyncio.Queue()
-        self._publisher_task = asyncio.create_task(self._publisher_loop())
+        if self._publishes:
+            self._publish_queue = asyncio.Queue()
+            self._publisher_task = asyncio.create_task(self._publisher_loop())
         return self
 
     async def __aexit__(self, exc_type: object, exc: object, tb: object) -> None:
@@ -102,9 +111,8 @@ class RedisEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         queue = require(self._publish_queue, "publish queue")
         client = require(self._client, "Redis client")
         while True:
-            event_id, args, kwargs = await queue.get()
+            event_id, body = await queue.get()
             try:
-                body = json.dumps({"args": list(args), "kwargs": kwargs})
                 await client.publish(self._channel(event_id), body)
             except Exception:
                 logger.exception("Failed to publish event %s", event_id)
@@ -124,9 +132,7 @@ class RedisEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
                 data = message["data"]
                 if isinstance(data, bytes):
                     data = data.decode()
-                payload = json.loads(data)
-                args = payload.get("args", [])
-                kwargs = payload.get("kwargs", {})
+                event = self._codec.decode(data)
             except Exception:
                 logger.exception("Dropping unparseable Redis message")
                 continue
@@ -137,7 +143,7 @@ class RedisEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
 
             async def _run_one(listener: EventListener) -> None:
                 try:
-                    await listener.fn(*args, **kwargs)
+                    await self._codec.invoke(listener.fn, event_id, event)
                 except Exception:
                     logger.exception(
                         "Listener %s failed for event %s",

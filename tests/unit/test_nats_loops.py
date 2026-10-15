@@ -14,6 +14,7 @@ from types import SimpleNamespace
 from typing import Any, cast
 
 import pytest
+from dirty_equals import IsStr
 from litestar.events import EventListener, listener
 
 import nats
@@ -52,6 +53,7 @@ class _FakeClient:
         self.subscriptions: list[tuple[str, Any]] = []
         self.created_subs: list[_FakeSubscription] = []
         self.published: list[tuple[str, bytes]] = []
+        self.headers: list[Any] = []
         self.publish_error: Exception | None = None
         self.drained = False
         self.closed = False
@@ -62,10 +64,11 @@ class _FakeClient:
         self.created_subs.append(sub)
         return sub
 
-    async def publish(self, subject: str, body: bytes) -> None:
+    async def publish(self, subject: str, body: bytes, headers: Any = None) -> None:
         if self.publish_error is not None:
             raise self.publish_error
         self.published.append((subject, body))
+        self.headers.append(headers)
 
     async def drain(self) -> None:
         self.drained = True
@@ -114,9 +117,15 @@ async def test_enter_subscribes_and_exit_drains(
     assert client.drained is True
     assert client.closed is True
     assert emitter._publish_queue is None
+    assert client.headers == [{"Content-Type": "application/json"}]
     subject, body = client.published[0]
     assert subject == "litestar.events.user_registered"
-    assert json.loads(body) == {"args": [], "kwargs": {"email": "ada@example.com"}}
+    assert json.loads(body) == {
+        "v": 1,
+        "cid": IsStr(),
+        "args": [],
+        "kwargs": {"email": "ada@example.com"},
+    }
 
 
 async def test_enter_rejects_invalid_subject(monkeypatch: pytest.MonkeyPatch) -> None:

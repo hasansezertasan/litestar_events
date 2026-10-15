@@ -18,6 +18,7 @@ from types import SimpleNamespace
 from typing import Any, ClassVar, cast
 
 import pytest
+from dirty_equals import IsStr
 from litestar.events import EventListener, listener
 
 
@@ -148,7 +149,9 @@ async def test_enter_with_dsn_opens_owned_pool(monkeypatch: pytest.MonkeyPatch) 
         "SELECT pg_notify(%s, %s)",
         (
             "litestar_events_user_registered",
-            json.dumps({"args": [], "kwargs": {"email": "ada@example.com"}}),
+            IsStr(
+                regex=r'^\{"v":1,"cid":"[0-9a-f]{32}","args":\[\],"kwargs":\{"email":"ada@example.com"\}\}$'
+            ),
         ),
     ) in _FakePool.instances[0].conn.executed
 
@@ -187,7 +190,7 @@ async def test_publisher_loop_logs_failure() -> None:
     pool = cast("_FakePool", emitter._pool)
     pool.conn.execute_error = RuntimeError("boom")
     emitter._publish_queue = asyncio.Queue()
-    emitter._publish_queue.put_nowait(("evt", (1,), {}))
+    emitter._publish_queue.put_nowait(("evt", b"{}"))
 
     task = asyncio.create_task(emitter._publisher_loop())
     await asyncio.sleep(0.1)

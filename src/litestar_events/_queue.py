@@ -2,18 +2,29 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypeAlias, TypeVar
+import asyncio
+import logging
+from collections import defaultdict
+from typing import TYPE_CHECKING, Any, TypeAlias, TypeVar, cast
+
+from litestar_events.codec import Codec, JSONCodec, Message, listener_name
+from litestar_events.config import EventsRole, resolve_role
+from litestar_events.context import outgoing_correlation_id, outgoing_headers
 
 if TYPE_CHECKING:
-    import asyncio
+    from collections.abc import Iterable, Mapping
+
+    from litestar.events import BaseEventEmitterBackend, EventListener
 
 __all__ = ["QueuedEmitterMixin", "require"]
 
 
 _T = TypeVar("_T")
 
-#: The payload buffered on a backend's publish queue: ``(event_id, args, kwargs)``.
-QueuePayload: TypeAlias = tuple[str, tuple[Any, ...], dict[str, Any]]
+logger = logging.getLogger(__name__)
+
+#: The payload buffered on a backend's publish queue: ``(event_id, encoded_body)``.
+QueuePayload: TypeAlias = tuple[str, bytes]
 
 
 def require(value: _T | None, name: str) -> _T:
@@ -54,6 +65,68 @@ class QueuedEmitterMixin:
     # Class default so the guard below holds even before any ``__init__`` /
     # ``__aenter__`` assignment; per-instance assignment shadows it normally.
     _publish_queue: asyncio.Queue[QueuePayload] | None = None
+    #: ``True`` when events are only visible inside this process.
+    process_local: bool = False
+    #: ``False`` when events are lost while no consumer is connected.
+    durable: bool = True
+    _role: EventsRole = EventsRole.EMBEDDED
+    _codec: Codec = JSONCodec()
+    _local: frozenset[EventListener] = frozenset()
+    # Per-event listeners this process consumes from the broker; set by each
+    # backend's ``__init__`` and recomputed by ``_apply_placement``.
+    _by_event: dict[str, list[EventListener]]
+
+    @property
+    def role(self) -> EventsRole:
+        """The effective role of this emitter."""
+        return self._role
+
+    @property
+    def _publishes(self) -> bool:
+        return self._role is not EventsRole.WORKER
+
+    @property
+    def _consumes(self) -> bool:
+        return self._role is not EventsRole.PRODUCER
+
+    def use_role(self, role: EventsRole | str) -> None:
+        """Set the role explicitly, replacing the configured one.
+
+        Must be called before the emitter's async context is entered.
+        """
+        self._role = EventsRole(role)
+        self._apply_placement()
+
+    def _registered(self) -> Mapping[str, Iterable[EventListener]]:
+        # ``listeners`` comes from ``BaseEventEmitterBackend``, which this
+        # mixin is always combined with (see ``__init_subclass__``).
+        return cast("BaseEventEmitterBackend", self).listeners
+
+    def set_local_listeners(self, listeners: Iterable[EventListener]) -> None:
+        """Mark listeners that run in the producer process, not on the worker.
+
+        A ``producer`` calls them directly from ``emit``; a ``worker`` skips
+        them; an ``embedded`` emitter ignores the marking (it runs everything).
+        """
+        self._local = frozenset(listeners)
+        self._apply_placement()
+
+    def _apply_placement(self) -> None:
+        """Rebuild ``_by_event`` without the listeners this role must not consume."""
+        skip = self._local if self._role is EventsRole.WORKER else frozenset()
+        by_event: dict[str, list[EventListener]] = defaultdict(list)
+        for event_id, listeners in self._registered().items():
+            by_event[event_id] = [
+                listener for listener in listeners if listener not in skip
+            ]
+        self._by_event = defaultdict(list, {k: v for k, v in by_event.items() if v})
+
+    def _init_codec(self, codec: Codec | None) -> None:
+        self._codec = codec or JSONCodec()
+
+    def _init_role(self, role: EventsRole | str | None) -> None:
+        self._role = resolve_role(role)
+        self._local_tasks: set[asyncio.Task[None]] = set()
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         # The MRO ordering (mixin before the ABC) is not type-checkable, so
@@ -75,10 +148,62 @@ class QueuedEmitterMixin:
             raise TypeError(msg)
 
     def emit(self, event_id: str, *args: Any, **kwargs: Any) -> None:
+        if self._role is EventsRole.WORKER:
+            msg = "Cannot emit from a worker-role emitter; it only consumes events"
+            raise RuntimeError(msg)
         if self._publish_queue is None:
             msg = "Emitter used outside its async context"
             raise RuntimeError(msg)
-        self._publish_queue.put_nowait((event_id, args, kwargs))
+        # Encode here so an unserializable payload fails at the call site
+        # instead of being dropped later in the background publisher.
+        body = self._codec.encode(
+            Message(
+                args=args,
+                kwargs=kwargs,
+                headers=outgoing_headers(),
+                correlation_id=outgoing_correlation_id(),
+            )
+        )
+        self._publish_queue.put_nowait((event_id, body))
+        if self._role is EventsRole.PRODUCER and self._local:
+            self._spawn_local(event_id, body)
+
+    def _spawn_local(self, event_id: str, body: bytes) -> None:
+        listeners = [
+            listener
+            for listener in self._registered().get(event_id, ())
+            if listener in self._local
+        ]
+        if not listeners:
+            return
+        task = asyncio.get_running_loop().create_task(
+            self._run_local(event_id, body, listeners)
+        )
+        self._local_tasks.add(task)
+        task.add_done_callback(self._local_tasks.discard)
+
+    async def _run_local(
+        self, event_id: str, body: bytes, listeners: list[EventListener]
+    ) -> None:
+        # Decode the encoded body, as a worker would, so local and remote
+        # listeners see the same values (and typed decoding applies to both).
+        try:
+            event = self._codec.decode(body)
+        except Exception:
+            logger.exception("Dropping undecodable local event %s", event_id)
+            return
+        results = await asyncio.gather(
+            *(self._codec.invoke(item.fn, event_id, event) for item in listeners),
+            return_exceptions=True,
+        )
+        for listener, result in zip(listeners, results, strict=True):
+            if isinstance(result, Exception):
+                logger.error(
+                    "Local listener %s failed for event %s",
+                    listener_name(listener.fn),
+                    event_id,
+                    exc_info=result,
+                )
 
     def _close_queue(self) -> None:
         """Drop the publish queue so a post-teardown ``emit`` raises again.
@@ -89,3 +214,5 @@ class QueuedEmitterMixin:
         buffering onto an abandoned queue that nothing will drain.
         """
         self._publish_queue = None
+        for task in self._local_tasks:
+            task.cancel()

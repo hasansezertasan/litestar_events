@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
-import json
 import logging
 import re
 from collections import defaultdict
@@ -17,6 +16,9 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     import aiomqtt
+
+    from litestar_events.codec import Codec
+    from litestar_events.config import EventsRole
 
 __all__ = ["MQTTEventEmitter"]
 
@@ -69,10 +71,14 @@ class MQTTEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         a shared ``queue_name``).
     """
 
+    durable = False
+
     def __init__(
         self,
         listeners: Sequence[EventListener],
         *,
+        role: EventsRole | str | None = None,
+        codec: Codec | None = None,
         hostname: str = "localhost",
         port: int = 1883,
         username: str | None = None,
@@ -82,6 +88,8 @@ class MQTTEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         client_id: str | None = None,
     ) -> None:
         super().__init__(listeners)
+        self._init_role(role)
+        self._init_codec(codec)
         self._hostname = hostname
         self._port = port
         self._username = username
@@ -129,14 +137,16 @@ class MQTTEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
             msg = "aiomqtt client context manager returned no client"
             raise RuntimeError(msg)
 
-        for event_id in self._by_event:
-            await self._client.subscribe(self._topic(event_id), qos=self._qos)
+        if self._consumes:
+            for event_id in self._by_event:
+                await self._client.subscribe(self._topic(event_id), qos=self._qos)
 
-        if self._by_event:
+        if self._by_event and self._consumes:
             self._consumer_task = asyncio.create_task(self._consumer_loop())
 
-        self._publish_queue = asyncio.Queue()
-        self._publisher_task = asyncio.create_task(self._publisher_loop())
+        if self._publishes:
+            self._publish_queue = asyncio.Queue()
+            self._publisher_task = asyncio.create_task(self._publisher_loop())
         return self
 
     async def __aexit__(self, exc_type: object, exc: object, tb: object) -> None:
@@ -153,9 +163,8 @@ class MQTTEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         queue = require(self._publish_queue, "publish queue")
         client = require(self._client, "MQTT client")
         while True:
-            event_id, args, kwargs = await queue.get()
+            event_id, body = await queue.get()
             try:
-                body = json.dumps({"args": list(args), "kwargs": kwargs})
                 await client.publish(self._topic(event_id), payload=body, qos=self._qos)
             except Exception:
                 logger.exception("Failed to publish event %s", event_id)
@@ -170,9 +179,7 @@ class MQTTEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
                 data = message.payload
                 if isinstance(data, (bytes, bytearray)):
                     data = data.decode()
-                payload = json.loads(data)
-                args = payload.get("args", [])
-                kwargs = payload.get("kwargs", {})
+                event = self._codec.decode(data)
             except Exception:
                 logger.exception("Dropping unparseable MQTT message on %s", topic)
                 continue
@@ -183,7 +190,7 @@ class MQTTEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
 
             async def _run_one(listener: EventListener) -> None:
                 try:
-                    await listener.fn(*args, **kwargs)
+                    await self._codec.invoke(listener.fn, event_id, event)
                 except Exception:
                     logger.exception(
                         "Listener %s failed for event %s",

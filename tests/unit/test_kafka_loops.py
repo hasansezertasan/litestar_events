@@ -16,6 +16,7 @@ from typing import Any, ClassVar, cast
 
 import aiokafka
 import pytest
+from dirty_equals import IsStr
 from litestar.events import EventListener, listener
 
 
@@ -43,6 +44,7 @@ class _FakeProducer:
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.kwargs = kwargs
         self.sent: list[tuple[str, bytes]] = []
+        self.headers: list[Any] = []
         self.started = False
         self.stopped = False
         self.send_error: Exception | None = None
@@ -54,10 +56,11 @@ class _FakeProducer:
     async def stop(self) -> None:
         self.stopped = True
 
-    async def send_and_wait(self, topic: str, body: bytes) -> None:
+    async def send_and_wait(self, topic: str, body: bytes, headers: Any = None) -> None:
         if self.send_error is not None:
             raise self.send_error
         self.sent.append((topic, body))
+        self.headers.append(headers)
 
 
 class _FakeConsumer:
@@ -133,9 +136,17 @@ async def test_enter_starts_clients_and_exit_stops_them(
     assert _FakeProducer.instances[0].stopped is True
     assert _FakeConsumer.instances[0].stopped is True
     assert emitter._publish_queue is None
+    assert _FakeProducer.instances[0].headers == [
+        [("content-type", b"application/json")]
+    ]
     topic, body = _FakeProducer.instances[0].sent[0]
     assert topic == "litestar.events.user_registered"
-    assert json.loads(body) == {"args": [], "kwargs": {"email": "ada@example.com"}}
+    assert json.loads(body) == {
+        "v": 1,
+        "cid": IsStr(),
+        "args": [],
+        "kwargs": {"email": "ada@example.com"},
+    }
 
 
 async def test_enter_without_listeners_skips_consumer(

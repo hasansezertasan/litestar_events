@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
-import json
 import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING
@@ -17,6 +16,9 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from gcloud.aio.pubsub import PublisherClient, SubscriberClient, SubscriberMessage
+
+    from litestar_events.codec import Codec
+    from litestar_events.config import EventsRole
 
 __all__ = ["PubSubEventEmitter"]
 
@@ -62,6 +64,8 @@ class PubSubEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         self,
         listeners: Sequence[EventListener],
         *,
+        role: EventsRole | str | None = None,
+        codec: Codec | None = None,
         project_id: str,
         topic_id: str = "litestar-events",
         subscription_name: str | None = None,
@@ -70,6 +74,11 @@ class PubSubEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         ack_deadline: float | None = None,
     ) -> None:
         super().__init__(listeners)
+        self._init_role(role)
+        self._init_codec(codec)
+        # An anonymous queue/subscription/group dies with the process, so a
+        # restarted or late worker misses what was emitted meanwhile.
+        self.durable = subscription_name is not None
         self._project_id = project_id
         self._topic_id = topic_id
         self._subscription_name = subscription_name
@@ -124,10 +133,11 @@ class PubSubEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         sub_id = self._subscription_name or f"{self._topic_id}-{uuid4().hex}"
         self._subscription = f"projects/{self._project_id}/subscriptions/{sub_id}"
 
-        self._publish_queue = asyncio.Queue()
-        self._publisher_task = asyncio.create_task(self._publisher_loop())
+        if self._publishes:
+            self._publish_queue = asyncio.Queue()
+            self._publisher_task = asyncio.create_task(self._publisher_loop())
 
-        if self._by_event:
+        if self._by_event and self._consumes:
             self._subscriber = SubscriberClient(api_root=api_root)
             if self._create_resources:
                 await self._ensure_subscription()
@@ -165,11 +175,17 @@ class PubSubEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         queue = require(self._publish_queue, "publish queue")
         publisher = require(self._publisher, "Pub/Sub publisher")
         while True:
-            event_id, args, kwargs = await queue.get()
+            event_id, body = await queue.get()
             try:
-                body = json.dumps({"args": list(args), "kwargs": kwargs}).encode()
                 await publisher.publish(
-                    self._topic, [PubsubMessage(body, event_id=event_id)]
+                    self._topic,
+                    [
+                        PubsubMessage(
+                            body,
+                            event_id=event_id,
+                            content_type=self._codec.content_type,
+                        )
+                    ],
                 )
             except Exception:
                 logger.exception("Failed to publish event %s", event_id)
@@ -198,9 +214,7 @@ class PubSubEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
             )
             return
         try:
-            payload = json.loads(message.data)
-            args = payload.get("args", [])
-            kwargs = payload.get("kwargs", {})
+            event = self._codec.decode(message.data)
         except Exception:
             logger.exception("Dropping unparseable Pub/Sub message")
             return
@@ -212,7 +226,7 @@ class PubSubEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
 
         async def _run_one(listener: EventListener) -> None:
             try:
-                await listener.fn(*args, **kwargs)
+                await self._codec.invoke(listener.fn, event_id, event)
             except Exception:
                 logger.exception(
                     "Listener %s failed for event %s",

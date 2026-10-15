@@ -13,6 +13,7 @@ import json
 from typing import Any, cast
 
 import redis.asyncio as redis_asyncio
+from dirty_equals import IsStr
 from litestar.events import EventListener, listener
 
 
@@ -111,7 +112,12 @@ async def test_enter_subscribes_and_exit_closes(monkeypatch: Any) -> None:
     assert len(fake.published) == 1
     channel, body = fake.published[0]
     assert channel == "litestar.events:user_registered"
-    assert json.loads(body) == {"args": [], "kwargs": {"email": "ada@example.com"}}
+    assert json.loads(body) == {
+        "v": 1,
+        "cid": IsStr(),
+        "args": [],
+        "kwargs": {"email": "ada@example.com"},
+    }
 
 
 async def test_enter_without_listeners_skips_consumer(monkeypatch: Any) -> None:

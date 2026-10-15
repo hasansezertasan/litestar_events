@@ -19,6 +19,12 @@ Shared emitter machinery, configuration, and the Litestar plugin.
 
 .. automodule:: litestar_events.plugin
 
+.. automodule:: litestar_events.codec
+
+.. automodule:: litestar_events.context
+
+.. automodule:: litestar_events.middleware
+
 Backends (``litestar_events.contrib``)
 ---------------------------------------
 

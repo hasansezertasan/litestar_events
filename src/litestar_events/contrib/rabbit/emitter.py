@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
-import json
 import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING
@@ -17,6 +16,9 @@ if TYPE_CHECKING:
 
     import aio_pika
     from aio_pika.abc import AbstractIncomingMessage, AbstractRobustConnection
+
+    from litestar_events.codec import Codec
+    from litestar_events.config import EventsRole
 
 __all__ = ["RabbitEventEmitter"]
 
@@ -46,6 +48,8 @@ class RabbitEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         self,
         listeners: Sequence[EventListener],
         *,
+        role: EventsRole | str | None = None,
+        codec: Codec | None = None,
         amqp_url: str = "amqp://guest:guest@localhost/",
         exchange_name: str = "litestar.events",
         queue_name: str | None = None,
@@ -53,6 +57,11 @@ class RabbitEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         prefetch: int = 32,
     ) -> None:
         super().__init__(listeners)
+        self._init_role(role)
+        self._init_codec(codec)
+        # An anonymous queue/subscription/group dies with the process, so a
+        # restarted or late worker misses what was emitted meanwhile.
+        self.durable = queue_name is not None
         self._amqp_url = amqp_url
         self._exchange_name = exchange_name
         self._queue_name = queue_name
@@ -87,7 +96,16 @@ class RabbitEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         )
         await dl_queue.bind(dlx, routing_key="#")
 
-        sub_channel = await self._connection.channel()
+        if self._consumes:
+            await self._start_consumer(self._connection)
+
+        if self._publishes:
+            self._publish_queue = asyncio.Queue()
+            self._publisher_task = asyncio.create_task(self._publisher_loop())
+        return self
+
+    async def _start_consumer(self, connection: AbstractRobustConnection) -> None:
+        sub_channel = await connection.channel()
         await sub_channel.set_qos(prefetch_count=self._prefetch)
         queue = await sub_channel.declare_queue(
             self._queue_name or "",
@@ -96,13 +114,9 @@ class RabbitEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
             arguments={"x-dead-letter-exchange": self._dlx_name},
         )
         for event_id in self._by_event:
-            await queue.bind(self._exchange, routing_key=event_id)
+            await queue.bind(require(self._exchange, "exchange"), routing_key=event_id)
 
         await queue.consume(self._on_message)
-
-        self._publish_queue = asyncio.Queue()
-        self._publisher_task = asyncio.create_task(self._publisher_loop())
-        return self
 
     async def __aexit__(self, exc_type: object, exc: object, tb: object) -> None:
         if self._publisher_task is not None:
@@ -119,14 +133,13 @@ class RabbitEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         queue = require(self._publish_queue, "publish queue")
         exchange = require(self._exchange, "RabbitMQ exchange")
         while True:
-            event_id, args, kwargs = await queue.get()
+            event_id, body = await queue.get()
             try:
-                body = json.dumps({"args": list(args), "kwargs": kwargs}).encode()
                 await exchange.publish(
                     aio_pika.Message(
                         body=body,
                         delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
-                        content_type="application/json",
+                        content_type=self._codec.content_type,
                     ),
                     routing_key=event_id,
                 )
@@ -135,9 +148,7 @@ class RabbitEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
 
     async def _on_message(self, message: AbstractIncomingMessage) -> None:
         try:
-            payload = json.loads(message.body)
-            args = payload.get("args", [])
-            kwargs = payload.get("kwargs", {})
+            event = self._codec.decode(message.body)
         except Exception:
             logger.exception("Rejecting unparseable message to DLX")
             await message.reject(requeue=False)
@@ -152,7 +163,7 @@ class RabbitEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
 
         async def _run_one(listener: EventListener) -> None:
             try:
-                await listener.fn(*args, **kwargs)
+                await self._codec.invoke(listener.fn, event_id, event)
             except Exception:
                 logger.exception(
                     "Listener %s failed for event %s",

@@ -16,6 +16,7 @@ from typing import Any, cast
 
 import aiobotocore.session
 import pytest
+from dirty_equals import IsStr
 from litestar.events import EventListener, listener
 from typing_extensions import Self
 
@@ -154,11 +155,14 @@ async def test_enter_resolves_and_creates_queue(
     (sent,) = pub.sent
     assert sent["QueueUrl"] == "https://sqs.test/events"
     assert json.loads(sent["MessageBody"]) == {
+        "v": 1,
+        "cid": IsStr(),
         "args": [],
         "kwargs": {"email": "ada@example.com"},
     }
     assert sent["MessageAttributes"] == {
-        "event_id": {"DataType": "String", "StringValue": "user_registered"}
+        "event_id": {"DataType": "String", "StringValue": "user_registered"},
+        "content_type": {"DataType": "String", "StringValue": "application/json"},
     }
 
 

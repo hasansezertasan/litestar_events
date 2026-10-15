@@ -128,6 +128,7 @@ test = [
   # wedged broker fails with a traceback instead of hanging the run.
   "testcontainers[kafka,localstack,nats,postgres,rabbitmq,redis]>=4",
   "pytest-timeout>=2.3",
+  "pydantic==2.14.1",
 ]
 docs = [
   "sphinx==8.1.3",
@@ -377,6 +378,10 @@ exhaustive_ignores = [
   "_version",
   # Shared, dependency-free foundation modules: the contrib backends build on
   # them, and they import nothing internal, so there is no layering to enforce.
+  "_cli",
+  "codec",
+  "context",
+  "middleware",
   "_queue",
   "config",
   "plugin",

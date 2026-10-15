@@ -16,6 +16,7 @@ from typing import Any, cast
 
 import confluent_kafka
 import pytest
+from dirty_equals import IsStr
 from litestar.events import EventListener, listener
 
 
@@ -41,16 +42,18 @@ class _FakeProducer:
     def __init__(self, config: dict[str, Any]) -> None:
         self.config = config
         self.produced: list[tuple[str, bytes]] = []
+        self.headers: list[Any] = []
         self.polls: list[float] = []
         self.flushed: list[float] = []
         self.produce_error: Exception | None = None
         self.produce_failures = 0
 
-    def produce(self, topic: str, value: bytes) -> None:
+    def produce(self, topic: str, value: bytes, headers: Any = None) -> None:
         if self.produce_error is not None and self.produce_failures == 0:
             self.produce_failures += 1
             raise self.produce_error
         self.produced.append((topic, value))
+        self.headers.append(headers)
 
     def poll(self, timeout: float) -> None:
         self.polls.append(timeout)
@@ -146,9 +149,15 @@ async def test_enter_and_exit_lifecycle(monkeypatch: pytest.MonkeyPatch) -> None
     assert producer.flushed == [5.0]
     assert consumer.closed is True
     assert emitter._publish_queue is None
+    assert producer.headers[0] == [("content-type", b"application/json")]
     topic, body = producer.produced[0]
     assert topic == "litestar.events.user_registered"
-    assert json.loads(body) == {"args": [], "kwargs": {"email": "ada@example.com"}}
+    assert json.loads(body) == {
+        "v": 1,
+        "cid": IsStr(),
+        "args": [],
+        "kwargs": {"email": "ada@example.com"},
+    }
 
 
 async def test_enter_rejects_invalid_topic(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -189,7 +198,7 @@ async def test_publisher_logs_generic_failure(monkeypatch: pytest.MonkeyPatch) -
     # non-retry path by making every produce raise a generic error through
     # the stubbed producer below.
     class _AlwaysFails(_FakeProducer):
-        def produce(self, topic: str, value: bytes) -> None:
+        def produce(self, topic: str, value: bytes, headers: Any = None) -> None:
             msg = "boom"
             raise RuntimeError(msg)
 

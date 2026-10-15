@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
-import json
 import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING
@@ -16,6 +15,9 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     import zmq.asyncio
+
+    from litestar_events.codec import Codec
+    from litestar_events.config import EventsRole
 
 __all__ = ["ZeroMQEventEmitter"]
 
@@ -53,15 +55,21 @@ class ZeroMQEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
       - dynamic peer discovery (addresses are static configuration).
     """
 
+    durable = False
+
     def __init__(
         self,
         listeners: Sequence[EventListener],
         *,
+        role: EventsRole | str | None = None,
+        codec: Codec | None = None,
         pub_address: str = "tcp://127.0.0.1:5557",
         connect_addresses: Sequence[str] | None = None,
         subscribe_warmup: float = 0.2,
     ) -> None:
         super().__init__(listeners)
+        self._init_role(role)
+        self._init_codec(codec)
         self._pub_address = pub_address
         self._connect_addresses = (
             list(connect_addresses) if connect_addresses is not None else [pub_address]
@@ -86,10 +94,11 @@ class ZeroMQEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         import zmq
 
         self._ctx = zmq.asyncio.Context()
-        self._pub = self._ctx.socket(zmq.PUB)
-        self._pub.bind(self._pub_address)
+        if self._publishes:
+            self._pub = self._ctx.socket(zmq.PUB)
+            self._pub.bind(self._pub_address)
 
-        if self._by_event:
+        if self._by_event and self._consumes:
             self._sub = self._ctx.socket(zmq.SUB)
             for addr in self._connect_addresses:
                 self._sub.connect(addr)
@@ -101,8 +110,9 @@ class ZeroMQEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         # first emit, otherwise early events are dropped.
         await asyncio.sleep(self._subscribe_warmup)
 
-        self._publish_queue = asyncio.Queue()
-        self._publisher_task = asyncio.create_task(self._publisher_loop())
+        if self._publishes:
+            self._publish_queue = asyncio.Queue()
+            self._publisher_task = asyncio.create_task(self._publisher_loop())
         return self
 
     async def __aexit__(self, exc_type: object, exc: object, tb: object) -> None:
@@ -119,9 +129,8 @@ class ZeroMQEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         queue = require(self._publish_queue, "publish queue")
         pub = require(self._pub, "ZMQ publisher socket")
         while True:
-            event_id, args, kwargs = await queue.get()
+            event_id, body = await queue.get()
             try:
-                body = json.dumps({"args": list(args), "kwargs": kwargs}).encode()
                 await pub.send_multipart([event_id.encode(), body])
             except Exception:
                 logger.exception("Failed to publish event %s", event_id)
@@ -138,9 +147,7 @@ class ZeroMQEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
                 continue
             try:
                 event_id = frames[0].decode()
-                payload = json.loads(frames[1])
-                args = payload.get("args", [])
-                kwargs = payload.get("kwargs", {})
+                event = self._codec.decode(frames[1])
             except Exception:
                 logger.exception("Dropping unparseable ZMQ message")
                 continue
@@ -151,7 +158,7 @@ class ZeroMQEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
 
             async def _run_one(listener: EventListener) -> None:
                 try:
-                    await listener.fn(*args, **kwargs)
+                    await self._codec.invoke(listener.fn, event_id, event)
                 except Exception:
                     logger.exception(
                         "Listener %s failed for event %s",

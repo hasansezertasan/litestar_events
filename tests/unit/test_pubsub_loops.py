@@ -151,7 +151,10 @@ async def test_enter_creates_resources_and_exit_deletes_owned_subscription(
     topic, messages = publisher.published[0]
     assert topic == "projects/test-project/topics/litestar-events"
     (message,) = messages
-    assert message.attributes == {"event_id": "user_registered"}
+    assert message.attributes == {
+        "event_id": "user_registered",
+        "content_type": "application/json",
+    }
 
 
 async def test_enter_tolerates_existing_resources(

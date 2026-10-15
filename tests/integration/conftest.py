@@ -14,7 +14,7 @@ import pytest
 
 @pytest.fixture(scope="session")
 def rabbit_url():
-    from testcontainers.rabbitmq import RabbitMqContainer
+    from testcontainers.community.rabbitmq import RabbitMqContainer
 
     with RabbitMqContainer("rabbitmq:3-management") as c:
         params = c.get_connection_params()
@@ -23,7 +23,7 @@ def rabbit_url():
 
 @pytest.fixture(scope="session")
 def redis_url():
-    from testcontainers.redis import RedisContainer
+    from testcontainers.community.redis import RedisContainer
 
     with RedisContainer("redis:7") as c:
         yield f"redis://{c.get_container_host_ip()}:{c.get_exposed_port(6379)}/0"
@@ -31,7 +31,7 @@ def redis_url():
 
 @pytest.fixture(scope="session")
 def postgres_dsn():
-    from testcontainers.postgres import PostgresContainer
+    from testcontainers.community.postgres import PostgresContainer
 
     with PostgresContainer("postgres:16") as c:
         yield c.get_connection_url().replace("postgresql+psycopg2", "postgresql")
@@ -39,7 +39,7 @@ def postgres_dsn():
 
 @pytest.fixture(scope="session")
 def sqs_endpoint():
-    from testcontainers.localstack import LocalStackContainer
+    from testcontainers.community.localstack import LocalStackContainer
 
     with LocalStackContainer("localstack/localstack:3").with_services("sqs") as c:
         yield c.get_url()
@@ -62,7 +62,7 @@ def pubsub_emulator():
 
 @pytest.fixture(scope="session")
 def kafka_bootstrap():
-    from testcontainers.kafka import KafkaContainer
+    from testcontainers.community.kafka import KafkaContainer
 
     with KafkaContainer() as c:
         yield c.get_bootstrap_server()
@@ -70,7 +70,7 @@ def kafka_bootstrap():
 
 @pytest.fixture(scope="session")
 def nats_url():
-    from testcontainers.nats import NatsContainer
+    from testcontainers.community.nats import NatsContainer
 
     with NatsContainer() as c:
         yield c.nats_uri()

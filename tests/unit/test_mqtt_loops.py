@@ -15,6 +15,7 @@ from typing import Any, cast
 
 import aiomqtt
 import pytest
+from dirty_equals import IsBytes
 from litestar.events import EventListener, listener
 
 
@@ -117,7 +118,9 @@ async def test_enter_subscribes_and_exit_tears_down(
     assert client.published == [
         (
             "litestar/events/user_registered",
-            json.dumps({"args": [], "kwargs": {"email": "ada@example.com"}}),
+            IsBytes(
+                regex=rb'^\{"v":1,"cid":"[0-9a-f]{32}","args":\[\],"kwargs":\{"email":"ada@example.com"\}\}$'
+            ),
             1,
         )
     ]

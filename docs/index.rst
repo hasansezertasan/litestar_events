@@ -9,6 +9,7 @@ Event Emitter Backends for Litestar.
 
    installation
    usage
+   producer_worker
    modules
 
 .. toctree::

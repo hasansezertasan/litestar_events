@@ -15,6 +15,7 @@ from typing import Any
 
 import aio_pika
 import pytest
+from dirty_equals import IsStr
 from litestar.events import EventListener, listener
 
 
@@ -177,6 +178,8 @@ async def test_enter_declares_topology_and_exit_closes(
     (message, routing_key), *_ = exchange.published
     assert routing_key == "user_registered"
     assert json.loads(message.body) == {
+        "v": 1,
+        "cid": IsStr(),
         "args": [],
         "kwargs": {"email": "ada@example.com"},
     }

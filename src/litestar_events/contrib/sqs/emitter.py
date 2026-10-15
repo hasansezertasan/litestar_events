@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 from collections import defaultdict
 from contextlib import AsyncExitStack, suppress
@@ -14,6 +13,9 @@ from litestar_events._queue import QueuedEmitterMixin, QueuePayload, require
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+    from litestar_events.codec import Codec
+    from litestar_events.config import EventsRole
 
 __all__ = ["SQSEventEmitter"]
 
@@ -58,10 +60,12 @@ class SQSEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         LocalStack and tests.
     """
 
-    def __init__(  # pylint: disable=too-many-arguments  # one keyword knob per SQS feature; keyword-only past `listeners`
+    def __init__(  # pylint: disable=too-many-arguments,too-many-locals  # one keyword knob per SQS feature; keyword-only past `listeners`
         self,
         listeners: Sequence[EventListener],
         *,
+        role: EventsRole | str | None = None,
+        codec: Codec | None = None,
         queue_url: str | None = None,
         queue_name: str = "litestar-events",
         region_name: str = "us-east-1",
@@ -74,6 +78,8 @@ class SQSEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         visibility_timeout: int = 30,
     ) -> None:
         super().__init__(listeners)
+        self._init_role(role)
+        self._init_codec(codec)
         self._queue_url = queue_url
         self._queue_name = queue_name
         self._region_name = region_name
@@ -133,9 +139,10 @@ class SQSEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         if self._queue_url is None:
             self._queue_url = await self._resolve_queue_url()
 
-        self._publish_queue = asyncio.Queue()
-        self._publisher_task = asyncio.create_task(self._publisher_loop())
-        if self._by_event:
+        if self._publishes:
+            self._publish_queue = asyncio.Queue()
+            self._publisher_task = asyncio.create_task(self._publisher_loop())
+        if self._by_event and self._consumes:
             self._consumer_task = asyncio.create_task(self._consumer_loop())
         return self
 
@@ -154,14 +161,17 @@ class SQSEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         client: Any = require(self._pub_client, "SQS publish client")
         queue_url = require(self._queue_url, "SQS queue URL")
         while True:
-            event_id, args, kwargs = await queue.get()
+            event_id, body = await queue.get()
             try:
-                body = json.dumps({"args": list(args), "kwargs": kwargs})
                 await client.send_message(
                     QueueUrl=queue_url,
-                    MessageBody=body,
+                    MessageBody=body.decode(),
                     MessageAttributes={
-                        "event_id": {"DataType": "String", "StringValue": event_id}
+                        "event_id": {"DataType": "String", "StringValue": event_id},
+                        "content_type": {
+                            "DataType": "String",
+                            "StringValue": self._codec.content_type,
+                        },
                     },
                 )
             except Exception:
@@ -193,9 +203,7 @@ class SQSEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         attrs: dict[str, Any] = message.get("MessageAttributes") or {}
         event_id = (attrs.get("event_id") or {}).get("StringValue", "")
         try:
-            payload = json.loads(message["Body"])
-            args = payload.get("args", [])
-            kwargs = payload.get("kwargs", {})
+            event = self._codec.decode(message["Body"])
         except Exception:
             logger.exception(
                 "Dropping unparseable SQS message "
@@ -212,7 +220,7 @@ class SQSEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
 
         async def _run_one(listener: EventListener) -> None:
             try:
-                await listener.fn(*args, **kwargs)
+                await self._codec.invoke(listener.fn, event_id, event)
             except Exception:
                 logger.exception(
                     "Listener %s failed for event %s",

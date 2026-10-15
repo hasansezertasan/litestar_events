@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
-import json
 import logging
 import re
 import uuid
@@ -18,6 +17,9 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
+
+    from litestar_events.codec import Codec
+    from litestar_events.config import EventsRole
 
 __all__ = ["KafkaEventEmitter"]
 
@@ -67,12 +69,19 @@ class KafkaEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         self,
         listeners: Sequence[EventListener],
         *,
+        role: EventsRole | str | None = None,
+        codec: Codec | None = None,
         bootstrap_servers: str = "localhost:9092",
         group_id: str | None = None,
         topic_prefix: str = "litestar.events.",
         auto_offset_reset: str = "latest",
     ) -> None:
         super().__init__(listeners)
+        self._init_role(role)
+        self._init_codec(codec)
+        # An anonymous queue/subscription/group dies with the process, so a
+        # restarted or late worker misses what was emitted meanwhile.
+        self.durable = group_id is not None
         self._bootstrap_servers = bootstrap_servers
         self._group_id = group_id or f"litestar-events-{uuid.uuid4()}"
         self._topic_prefix = topic_prefix
@@ -102,10 +111,11 @@ class KafkaEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
                 msg = f"event_id {event_id!r} produces an invalid Kafka topic. {exc}"
                 raise ValueError(msg) from exc
 
-        self._producer = AIOKafkaProducer(bootstrap_servers=self._bootstrap_servers)
-        await self._producer.start()
+        if self._publishes:
+            self._producer = AIOKafkaProducer(bootstrap_servers=self._bootstrap_servers)
+            await self._producer.start()
 
-        if self._by_event:
+        if self._by_event and self._consumes:
             topics = [self._topic(event_id) for event_id in self._by_event]
             self._consumer = AIOKafkaConsumer(
                 *topics,
@@ -117,8 +127,9 @@ class KafkaEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
             await self._consumer.start()
             self._consumer_task = asyncio.create_task(self._consumer_loop())
 
-        self._publish_queue = asyncio.Queue()
-        self._publisher_task = asyncio.create_task(self._publisher_loop())
+        if self._publishes:
+            self._publish_queue = asyncio.Queue()
+            self._publisher_task = asyncio.create_task(self._publisher_loop())
         return self
 
     async def __aexit__(self, exc_type: object, exc: object, tb: object) -> None:
@@ -138,10 +149,13 @@ class KafkaEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         queue = require(self._publish_queue, "publish queue")
         producer = require(self._producer, "Kafka producer")
         while True:
-            event_id, args, kwargs = await queue.get()
+            event_id, body = await queue.get()
             try:
-                body = json.dumps({"args": list(args), "kwargs": kwargs}).encode()
-                await producer.send_and_wait(self._topic(event_id), body)
+                await producer.send_and_wait(
+                    self._topic(event_id),
+                    body,
+                    headers=[("content-type", self._codec.content_type.encode())],
+                )
             except Exception:
                 logger.exception("Failed to publish event %s", event_id)
 
@@ -156,9 +170,7 @@ class KafkaEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
                 logger.debug("Skipping tombstone record on topic %s", topic)
                 continue
             try:
-                payload = json.loads(value)
-                args = payload.get("args", [])
-                kwargs = payload.get("kwargs", {})
+                event = self._codec.decode(value)
             except Exception:
                 logger.exception("Dropping unparseable message on topic %s", topic)
                 continue
@@ -170,7 +182,7 @@ class KafkaEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
 
             async def _run_one(listener: EventListener) -> None:
                 try:
-                    await listener.fn(*args, **kwargs)
+                    await self._codec.invoke(listener.fn, event_id, event)
                 except Exception:
                     logger.exception(
                         "Listener %s failed for event %s",

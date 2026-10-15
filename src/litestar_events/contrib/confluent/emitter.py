@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import concurrent.futures
 import contextlib
-import json
 import logging
 import re
 import uuid
@@ -19,6 +18,9 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
     from confluent_kafka import Consumer, Producer
+
+    from litestar_events.codec import Codec
+    from litestar_events.config import EventsRole
 
 __all__ = ["ConfluentEventEmitter"]
 
@@ -68,6 +70,8 @@ class ConfluentEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         self,
         listeners: Sequence[EventListener],
         *,
+        role: EventsRole | str | None = None,
+        codec: Codec | None = None,
         bootstrap_servers: str = "localhost:9092",
         group_id: str | None = None,
         topic_prefix: str = "litestar.events.",
@@ -75,6 +79,11 @@ class ConfluentEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         consumer_config: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(listeners)
+        self._init_role(role)
+        self._init_codec(codec)
+        # An anonymous queue/subscription/group dies with the process, so a
+        # restarted or late worker misses what was emitted meanwhile.
+        self.durable = group_id is not None
         self._bootstrap_servers = bootstrap_servers
         self._group_id = group_id or f"litestar-events-{uuid.uuid4()}"
         self._topic_prefix = topic_prefix
@@ -109,15 +118,16 @@ class ConfluentEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
                 msg = f"event_id {event_id!r} produces an invalid Kafka topic. {exc}"
                 raise ValueError(msg) from exc
 
-        self._producer_pool = concurrent.futures.ThreadPoolExecutor(
-            max_workers=1, thread_name_prefix="confluent-producer"
-        )
-        self._producer = Producer({
-            "bootstrap.servers": self._bootstrap_servers,
-            **self._producer_config,
-        })
+        if self._publishes:
+            self._producer_pool = concurrent.futures.ThreadPoolExecutor(
+                max_workers=1, thread_name_prefix="confluent-producer"
+            )
+            self._producer = Producer({
+                "bootstrap.servers": self._bootstrap_servers,
+                **self._producer_config,
+            })
 
-        if self._by_event:
+        if self._by_event and self._consumes:
             self._consumer_pool = concurrent.futures.ThreadPoolExecutor(
                 max_workers=1, thread_name_prefix="confluent-consumer"
             )
@@ -134,9 +144,10 @@ class ConfluentEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
             )
             self._consumer_task = asyncio.create_task(self._consumer_loop())
 
-        self._publish_queue = asyncio.Queue()
-        self._publisher_task = asyncio.create_task(self._publisher_loop())
-        self._producer_poll_task = asyncio.create_task(self._producer_poll_loop())
+        if self._publishes:
+            self._publish_queue = asyncio.Queue()
+            self._publisher_task = asyncio.create_task(self._publisher_loop())
+            self._producer_poll_task = asyncio.create_task(self._producer_poll_loop())
         return self
 
     async def __aexit__(self, exc_type: object, exc: object, tb: object) -> None:
@@ -192,14 +203,16 @@ class ConfluentEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         queue = require(self._publish_queue, "publish queue")
         producer = require(self._producer, "Kafka producer")
         while True:
-            event_id, args, kwargs = await queue.get()
+            event_id, body = await queue.get()
             try:
-                body = json.dumps({"args": list(args), "kwargs": kwargs}).encode()
+                headers: list[tuple[str, str | bytes | None]] = [
+                    ("content-type", self._codec.content_type.encode())
+                ]
                 try:
-                    producer.produce(self._topic(event_id), value=body)
+                    producer.produce(self._topic(event_id), value=body, headers=headers)
                 except BufferError:
                     await self._run_producer(producer.poll, 1.0)
-                    producer.produce(self._topic(event_id), value=body)
+                    producer.produce(self._topic(event_id), value=body, headers=headers)
             except Exception:
                 logger.exception("Failed to publish event %s", event_id)
 
@@ -231,9 +244,7 @@ class ConfluentEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
             topic = msg.topic() or ""
             event_id = topic[prefix_len:]
             try:
-                payload = json.loads(msg.value())
-                args = payload.get("args", [])
-                kwargs = payload.get("kwargs", {})
+                event = self._codec.decode(msg.value())
             except Exception:
                 logger.exception("Dropping unparseable message on topic %s", topic)
                 continue
@@ -245,7 +256,7 @@ class ConfluentEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
 
             async def _run_one(listener: EventListener) -> None:
                 try:
-                    await listener.fn(*args, **kwargs)
+                    await self._codec.invoke(listener.fn, event_id, event)
                 except Exception:
                     logger.exception(
                         "Listener %s failed for event %s",

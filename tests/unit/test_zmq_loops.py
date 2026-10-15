@@ -15,6 +15,7 @@ from typing import Any, cast
 
 import pytest
 import zmq.asyncio
+from dirty_equals import IsStr
 from litestar.events import EventListener, listener
 
 import zmq
@@ -130,7 +131,12 @@ async def test_enter_binds_and_exit_destroys(monkeypatch: pytest.MonkeyPatch) ->
     assert emitter._publish_queue is None
     (frames,) = ctx.pub.sent
     assert frames[0] == b"user_registered"
-    assert json.loads(frames[1]) == {"args": [], "kwargs": {"email": "ada@example.com"}}
+    assert json.loads(frames[1]) == {
+        "v": 1,
+        "cid": IsStr(),
+        "args": [],
+        "kwargs": {"email": "ada@example.com"},
+    }
 
 
 async def test_enter_without_listeners_skips_subscriber(

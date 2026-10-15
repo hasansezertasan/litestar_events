@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
-import json
 import logging
 import re
 from collections import defaultdict
@@ -17,6 +16,9 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from psycopg_pool import AsyncConnectionPool
+
+    from litestar_events.codec import Codec
+    from litestar_events.config import EventsRole
 
 __all__ = ["PostgresEventEmitter"]
 
@@ -69,15 +71,21 @@ class PostgresEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
       - large payloads (~8 KB hard limit).
     """
 
+    durable = False
+
     def __init__(
         self,
         listeners: Sequence[EventListener],
         *,
+        role: EventsRole | str | None = None,
+        codec: Codec | None = None,
         dsn: str | None = None,
         pool: AsyncConnectionPool | None = None,
         channel_prefix: str = "litestar_events_",
     ) -> None:
         super().__init__(listeners)
+        self._init_role(role)
+        self._init_codec(codec)
         if (dsn is None) == (pool is None):
             msg = "Provide exactly one of `dsn` or `pool`."
             raise ValueError(msg)
@@ -122,11 +130,12 @@ class PostgresEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
             await self._pool.open()
 
         require(self._pool, "connection pool")
-        if self._by_event:
+        if self._by_event and self._consumes:
             self._consumer_task = asyncio.create_task(self._consumer_loop())
 
-        self._publish_queue = asyncio.Queue()
-        self._publisher_task = asyncio.create_task(self._publisher_loop())
+        if self._publishes:
+            self._publish_queue = asyncio.Queue()
+            self._publisher_task = asyncio.create_task(self._publisher_loop())
         return self
 
     async def __aexit__(self, exc_type: object, exc: object, tb: object) -> None:
@@ -143,12 +152,12 @@ class PostgresEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         queue = require(self._publish_queue, "publish queue")
         pool = require(self._pool, "connection pool")
         while True:
-            event_id, args, kwargs = await queue.get()
+            event_id, body = await queue.get()
             try:
-                body = json.dumps({"args": list(args), "kwargs": kwargs})
                 async with pool.connection() as conn:
                     await conn.execute(
-                        "SELECT pg_notify(%s, %s)", (self._channel(event_id), body)
+                        "SELECT pg_notify(%s, %s)",
+                        (self._channel(event_id), body.decode()),
                     )
             except Exception:
                 logger.exception("Failed to publish event %s", event_id)
@@ -171,9 +180,7 @@ class PostgresEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
             async for notify in conn.notifies():
                 event_id = notify.channel[prefix_len:]
                 try:
-                    payload = json.loads(notify.payload)
-                    args = payload.get("args", [])
-                    kwargs = payload.get("kwargs", {})
+                    event = self._codec.decode(notify.payload)
                 except Exception:
                     logger.exception(
                         "Dropping unparseable NOTIFY on channel %s", notify.channel
@@ -186,7 +193,7 @@ class PostgresEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
 
                 async def _run_one(listener: EventListener) -> None:
                     try:
-                        await listener.fn(*args, **kwargs)
+                        await self._codec.invoke(listener.fn, event_id, event)
                     except Exception:
                         logger.exception(
                             "Listener %s failed for event %s",

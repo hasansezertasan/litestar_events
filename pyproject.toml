@@ -335,13 +335,15 @@ ignore_decorators = [
 # names (CSS/compose/on_mount/title/BINDINGS) are invoked by the TUI framework,
 # and ``pytestmark``/``pytest_*`` (conftest hooks) are consumed by pytest at
 # collection time.
-ignore_names = ["CONFIG_FILE_PATH", "logger", "main", "model_config", "pytest_*", "collect_ignore_glob", "_Bad", "handle", "scopes", "exclude_opt_key"]
+ignore_names = ["CONFIG_FILE_PATH", "logger", "main", "model_config", "pytest_*", "collect_ignore_glob", "_Bad", "handle", "scopes", "exclude_opt_key", "HeaderScope", "id", "sku", "qty", "total", "age"]
 # `_Bad` (tests/unit/test_emit_contract.py) is a deliberately invalid class
 # hierarchy whose *definition* inside `pytest.raises(TypeError)` is the test —
 # the name is never referenced again, which is exactly what vulture reports.
 # `handle`, `scopes` and `exclude_opt_key` are the hooks Litestar's
 # ``ASGIMiddleware`` reads from RequestIdMiddleware; vulture offers no
 # per-line suppression that ruff's blanket-noqa rule allows.
+# `HeaderScope` is only used inside a string ``cast``; `id`, `sku`, `qty`,
+# `total` and `age` are msgspec Struct fields in tests/unit/test_codec.py.
 min_confidence = 60
 paths = ["src", "tests"]
 
@@ -476,6 +478,9 @@ convention = "pep257"
 # backend-wide for consistency (callback-driven backends never trigger B023).
 "./src/litestar_events/contrib/**/*.py" = ["B023"]
 "examples/**/*.py" = ["INP001"]
+# Litestar exposes no public API for CLI groups, so the events command group
+# imports ``LitestarGroup`` and ``console`` from the private ``litestar.cli._utils``.
+"src/litestar_events/_cli.py" = ["PLC2701"]
 # Documentation examples are importable modules tested by
 # ``tests/test_docs_examples.py``; they are not application packages.
 "docs/examples/**/*.py" = ["INP001"]

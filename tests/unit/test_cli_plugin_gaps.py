@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import os
 import signal
+import sys
 from pathlib import Path
 from typing import Any, cast
 
@@ -101,6 +102,9 @@ async def test_serve_waits_for_signal_then_stops(
     await _cli._serve(_app(_Shared))
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32", reason="os.kill(SIGTERM) terminates the process on Windows"
+)
 async def test_wait_for_signal_returns_on_sigterm() -> None:
     asyncio.get_running_loop().call_later(0.05, os.kill, os.getpid(), signal.SIGTERM)
     await asyncio.wait_for(_cli._wait_for_signal(), timeout=5)
@@ -290,3 +294,21 @@ async def test_closing_waits_for_running_local_tasks() -> None:
     emitter._local_tasks.add(task)
     await emitter._finish_local_tasks(timeout=5)
     assert done == [True]
+
+
+async def test_wait_for_signal_restores_fallback_handlers(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    loop = asyncio.get_running_loop()
+
+    def unsupported(*_: object) -> None:
+        raise NotImplementedError
+
+    monkeypatch.setattr(loop, "add_signal_handler", unsupported)
+    before = signal.getsignal(signal.SIGTERM)
+    task = asyncio.ensure_future(_cli._wait_for_signal())
+    await asyncio.sleep(0.05)
+    assert signal.getsignal(signal.SIGTERM) is not before
+    task.cancel()
+    await asyncio.gather(task, return_exceptions=True)
+    assert signal.getsignal(signal.SIGTERM) is before

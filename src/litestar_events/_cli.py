@@ -11,16 +11,13 @@ import time
 from typing import TYPE_CHECKING, Any, cast
 
 import click
-from litestar.cli._utils import (  # noqa: PLC2701  # no public API for CLI groups
-    LitestarGroup,
-    console,
-)
+from litestar.cli._utils import LitestarGroup, console
 
 from litestar_events._queue import RoleAwareEmitter
 from litestar_events.config import EventsConfig, EventsRole
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable, Iterator
+    from collections.abc import Awaitable, Callable, Generator
 
     from litestar import Litestar
     from litestar.events import BaseEventEmitterBackend, EventListener
@@ -124,9 +121,19 @@ def _as_worker(emitter: BaseEventEmitterBackend) -> None:
 async def _wait_for_signal() -> None:
     stop = asyncio.Event()
     loop = asyncio.get_running_loop()
-    for sig in (signal.SIGINT, signal.SIGTERM):
-        loop.add_signal_handler(sig, stop.set)
-    await stop.wait()
+    previous: dict[signal.Signals, Any] = {}
+    try:
+        for sig in (signal.SIGINT, signal.SIGTERM):
+            try:
+                loop.add_signal_handler(sig, stop.set)
+            except NotImplementedError:  # Windows event loops lack add_signal_handler
+                previous[sig] = signal.signal(
+                    sig, lambda *_: loop.call_soon_threadsafe(stop.set)
+                )
+        await stop.wait()
+    finally:
+        for sig, handler in previous.items():
+            signal.signal(sig, handler)
 
 
 async def _serve(app: Litestar) -> None:
@@ -137,7 +144,9 @@ async def _serve(app: Litestar) -> None:
 
 
 @contextlib.contextmanager
-def _tracking(emitter: BaseEventEmitterBackend, activity: _Activity) -> Iterator[None]:
+def _tracking(
+    emitter: BaseEventEmitterBackend, activity: _Activity
+) -> Generator[None, None, None]:
     """Count listener invocations of ``emitter`` for the duration of the block.
 
     A role-aware emitter runs listeners through its codec, so the codec is

@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="amber" data-content_root="../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>litestar_events.codec - litestar_events</title><link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=9c3e77be" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx_paramlinks.css" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../_static/print.css?v=20ff2c19" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/><meta property="og:title" content="litestar_events.codec"/>
+    <meta name="twitter:card" content="summary"/>
+  </head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../index.html">
+      
+      
+      <strong>litestar_events</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="nav-versions">
+    <button type="button" aria-label="Versions">
+      <span class="md:hidden">Versions</span>
+      <span class="hidden md:inline">0.1</span>
+      <i class="i-lucide chevron-down"></i>
+    </button>
+    <div class="nav-versions-choices"><ul><li><a href="/litestar_events/latest/">latest</a></li><li><a href="/litestar_events/0.1/">0.1</a></li></ul></div>
+  </div><div class="sy-head-socials">
+  <a href="https://github.com/hasansezertasan/litestar_events" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6">
+        <div class="globaltoc" data-expand-depth="0"><p class="caption" role="heading" aria-level="3"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../producer_worker.html">Producer and worker processes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Modules</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Maintainer guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../maintaining/setup.html">Repository setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../maintaining/backends.html">Backend design rules</a></li>
+</ul>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">litestar_events</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name">Module code</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">litestar_events.codec</strong>
+        <meta itemprop="position" content="3" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <article class="yue" role="main">
+          <h1>Source code for litestar_events.codec</h1><div class="highlight"><pre>
+<span></span><span data-line="1"><span class="sd">"""Wire format and listener-argument binding shared by every backend.</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="sd">The producer and the worker must agree on the bytes that travel through the</span>
+</span><span data-line="4"><span class="sd">broker. This module is that single definition: :class:`JSONCodec` encodes</span>
+</span><span data-line="5"><span class="sd">``emit(event_id, *args, **kwargs)`` into a versioned JSON envelope and decodes</span>
+</span><span data-line="6"><span class="sd">it again on the worker, optionally converting the decoded values into the</span>
+</span><span data-line="7"><span class="sd">types annotated on the listener's parameters.</span>
+</span><span data-line="8"><span class="sd">"""</span>
+</span><span data-line="9">
+</span><span data-line="10"><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+</span><span data-line="11">
+</span><span data-line="12"><span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
+</span><span data-line="13"><span class="kn">import</span><span class="w"> </span><span class="nn">functools</span>
+</span><span data-line="14"><span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
+</span><span data-line="15"><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+</span><span data-line="16"><span class="kn">import</span><span class="w"> </span><span class="nn">typing</span>
+</span><span data-line="17"><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+</span><span data-line="18"><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Protocol</span><span class="p">,</span> <span class="n">runtime_checkable</span>
+</span><span data-line="19">
+</span><span data-line="20"><span class="kn">import</span><span class="w"> </span><span class="nn">msgspec</span>
+</span><span data-line="21"><span class="kn">from</span><span class="w"> </span><span class="nn">litestar.serialization</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+</span><span data-line="22">    <span class="n">decode_json</span><span class="p">,</span>
+</span><span data-line="23">    <span class="n">default_deserializer</span><span class="p">,</span>
+</span><span data-line="24">    <span class="n">encode_json</span><span class="p">,</span>
+</span><span data-line="25">    <span class="n">get_serializer</span><span class="p">,</span>
+</span><span data-line="26"><span class="p">)</span>
+</span><span data-line="27">
+</span><span data-line="28"><span class="kn">from</span><span class="w"> </span><span class="nn">litestar_events.context</span><span class="w"> </span><span class="kn">import</span> <span class="n">EventContext</span><span class="p">,</span> <span class="n">use_event</span>
+</span><span data-line="29">
+</span><span data-line="30"><span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+</span><span data-line="31">    <span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Awaitable</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Sequence</span>
+</span><span data-line="32">
+</span><span data-line="33"><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+</span><span data-line="34">
+</span><span data-line="35"><span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"WIRE_VERSION"</span><span class="p">,</span> <span class="s2">"Codec"</span><span class="p">,</span> <span class="s2">"JSONCodec"</span><span class="p">,</span> <span class="s2">"Message"</span><span class="p">,</span> <span class="s2">"listener_name"</span><span class="p">]</span>
+</span><span data-line="36">
+</span><span data-line="37">
+</span><span data-line="38"><span class="c1">#: Version stamped on every message (``"v"``). Messages without it are</span>
+</span><span data-line="39"><span class="c1">#: version 1 messages written before the field existed. The envelope fields</span>
+</span><span data-line="40"><span class="c1">#: added since (``"cid"``, ``"h"``) are optional, so the version is unchanged.</span>
+</span><span data-line="41"><span class="n">WIRE_VERSION</span> <span class="o">=</span> <span class="mi">1</span>
+</span><span data-line="42">
+</span><span data-line="43">
+<div class="viewcode-block" id="Message">
+<a class="viewcode-back" href="../../modules.html#litestar_events.codec.Message">[docs]</a>
+</span><span data-line="44"><span class="nd">@dataclass</span>
+</span><span data-line="45"><span class="k">class</span><span class="w"> </span><span class="nc">Message</span><span class="p">:</span>
+</span><span data-line="46"><span class="w">    </span><span class="sd">"""One event as it crosses the broker."""</span>
+</span><span data-line="47">
+</span><span data-line="48">    <span class="n">args</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+</span><span data-line="49">    <span class="n">kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+</span><span data-line="50">    <span class="n">headers</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+</span><span data-line="51">    <span class="n">correlation_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+</span><span data-line="52">
+</span><span data-line="53">
+<div class="viewcode-block" id="Codec">
+<a class="viewcode-back" href="../../modules.html#litestar_events.codec.Codec">[docs]</a>
+</span><span data-line="54"><span class="nd">@runtime_checkable</span>
+</span><span data-line="55"><span class="k">class</span><span class="w"> </span><span class="nc">Codec</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+</span><span data-line="56"><span class="w">    </span><span class="sd">"""How events cross the broker and reach listeners."""</span>
+</span><span data-line="57">
+</span><span data-line="58">    <span class="n">content_type</span><span class="p">:</span> <span class="nb">str</span>
+</span><span data-line="59">
+<div class="viewcode-block" id="Codec.encode">
+<a class="viewcode-back" href="../../modules.html#litestar_events.codec.Codec.encode">[docs]</a>
+</span><span data-line="60">    <span class="k">def</span><span class="w"> </span><span class="nf">encode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">Message</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+</span><span data-line="61"><span class="w">        </span><span class="sd">"""Serialize an event. Called synchronously from ``emit``."""</span>
+</span><span data-line="62">        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+</span><span data-line="63">
+<div class="viewcode-block" id="Codec.decode">
+<a class="viewcode-back" href="../../modules.html#litestar_events.codec.Codec.decode">[docs]</a>
+</span><span data-line="64">    <span class="k">def</span><span class="w"> </span><span class="nf">decode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Message</span><span class="p">:</span>
+</span><span data-line="65"><span class="w">        </span><span class="sd">"""Parse a message back into a :class:`Message`."""</span>
+</span><span data-line="66">        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+</span><span data-line="67">
+<div class="viewcode-block" id="Codec.invoke">
+<a class="viewcode-back" href="../../modules.html#litestar_events.codec.Codec.invoke">[docs]</a>
+</span><span data-line="68">    <span class="k">def</span><span class="w"> </span><span class="nf">invoke</span><span class="p">(</span>
+</span><span data-line="69">        <span class="bp">self</span><span class="p">,</span> <span class="n">fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Awaitable</span><span class="p">[</span><span class="n">Any</span><span class="p">]],</span> <span class="n">event_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">Message</span>
+</span><span data-line="70">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Awaitable</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
+</span><span data-line="71"><span class="w">        </span><span class="sd">"""Call a listener with a decoded message."""</span>
+</span><span data-line="72">        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+</div>
+
+</span><span data-line="73">
+</span><span data-line="74">
+<div class="viewcode-block" id="JSONCodec">
+<a class="viewcode-back" href="../../modules.html#litestar_events.codec.JSONCodec">[docs]</a>
+</span><span data-line="75"><span class="k">class</span><span class="w"> </span><span class="nc">JSONCodec</span><span class="p">:</span>
+</span><span data-line="76"><span class="w">    </span><span class="sd">"""JSON envelope: ``v``, ``cid``, ``h``, ``args`` and ``kwargs`` keys.</span>
+</span><span data-line="77">
+</span><span data-line="78"><span class="sd">    Encoding uses Litestar's serializer, so ``datetime``, ``UUID``, ``Decimal``,</span>
+</span><span data-line="79"><span class="sd">    dataclasses and msgspec/Pydantic models are all supported on the producer.</span>
+</span><span data-line="80">
+</span><span data-line="81"><span class="sd">    Args:</span>
+</span><span data-line="82"><span class="sd">        typed: when ``True`` (default), the worker converts each decoded</span>
+</span><span data-line="83"><span class="sd">            argument to the type annotated on the listener's parameter</span>
+</span><span data-line="84"><span class="sd">            (``order: Order``, ``when: datetime``) before calling it. Unannotated</span>
+</span><span data-line="85"><span class="sd">            parameters, and listeners whose annotations cannot be resolved, get</span>
+</span><span data-line="86"><span class="sd">            plain JSON values. When ``False``, every listener gets plain JSON</span>
+</span><span data-line="87"><span class="sd">            values, as in earlier releases.</span>
+</span><span data-line="88"><span class="sd">        type_encoders: extra Litestar-style type encoders for ``encode``.</span>
+</span><span data-line="89"><span class="sd">        type_decoders: extra ``(predicate, decoder)`` pairs for typed decoding.</span>
+</span><span data-line="90">
+</span><span data-line="91"><span class="sd">    A listener whose single parameter is a model (dataclass, msgspec ``Struct``,</span>
+</span><span data-line="92"><span class="sd">    Pydantic model or ``TypedDict``) can receive the whole keyword payload:</span>
+</span><span data-line="93"><span class="sd">    ``app.emit("order_created", id=1, total=9)`` populates ``order: Order``.</span>
+</span><span data-line="94"><span class="sd">    A parameter annotated :class:`~litestar_events.context.EventContext` is</span>
+</span><span data-line="95"><span class="sd">    injected with the event's id, headers and correlation id.</span>
+</span><span data-line="96"><span class="sd">    """</span>
+</span><span data-line="97">
+</span><span data-line="98">    <span class="n">content_type</span> <span class="o">=</span> <span class="s2">"application/json"</span>
+</span><span data-line="99"><span class="w">    </span><span class="sd">"""Advertised on brokers with a native content-type field (RabbitMQ)."""</span>
+</span><span data-line="100">
+</span><span data-line="101">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+</span><span data-line="102">        <span class="bp">self</span><span class="p">,</span>
+</span><span data-line="103">        <span class="o">*</span><span class="p">,</span>
+</span><span data-line="104">        <span class="n">typed</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+</span><span data-line="105">        <span class="n">type_encoders</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="106">        <span class="n">type_decoders</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="nb">bool</span><span class="p">],</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]]]</span>
+</span><span data-line="107">        <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="108">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="109">        <span class="n">encoders</span><span class="p">,</span> <span class="n">decoders</span> <span class="o">=</span> <span class="n">_pydantic_hooks</span><span class="p">()</span>
+</span><span data-line="110">        <span class="bp">self</span><span class="o">.</span><span class="n">typed</span> <span class="o">=</span> <span class="n">typed</span>
+</span><span data-line="111">        <span class="bp">self</span><span class="o">.</span><span class="n">_serializer</span> <span class="o">=</span> <span class="n">get_serializer</span><span class="p">({</span><span class="o">**</span><span class="n">encoders</span><span class="p">,</span> <span class="o">**</span><span class="p">(</span><span class="n">type_encoders</span> <span class="ow">or</span> <span class="p">{})})</span>
+</span><span data-line="112">        <span class="bp">self</span><span class="o">.</span><span class="n">_decoders</span> <span class="o">=</span> <span class="p">[</span><span class="o">*</span><span class="p">(</span><span class="n">type_decoders</span> <span class="ow">or</span> <span class="p">()),</span> <span class="o">*</span><span class="n">decoders</span><span class="p">]</span>
+</span><span data-line="113">
+</span><span data-line="114">    <span class="k">def</span><span class="w"> </span><span class="nf">encode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">Message</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+</span><span data-line="115">        <span class="n">envelope</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"v"</span><span class="p">:</span> <span class="n">WIRE_VERSION</span><span class="p">}</span>
+</span><span data-line="116">        <span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">correlation_id</span><span class="p">:</span>
+</span><span data-line="117">            <span class="n">envelope</span><span class="p">[</span><span class="s2">"cid"</span><span class="p">]</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">correlation_id</span>
+</span><span data-line="118">        <span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">headers</span><span class="p">:</span>
+</span><span data-line="119">            <span class="n">envelope</span><span class="p">[</span><span class="s2">"h"</span><span class="p">]</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">headers</span>
+</span><span data-line="120">        <span class="n">envelope</span><span class="p">[</span><span class="s2">"args"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
+</span><span data-line="121">        <span class="n">envelope</span><span class="p">[</span><span class="s2">"kwargs"</span><span class="p">]</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">kwargs</span>
+</span><span data-line="122">        <span class="k">return</span> <span class="n">encode_json</span><span class="p">(</span><span class="n">envelope</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_serializer</span><span class="p">)</span>
+</span><span data-line="123">
+</span><span data-line="124">    <span class="k">def</span><span class="w"> </span><span class="nf">decode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Message</span><span class="p">:</span>
+</span><span data-line="125">        <span class="n">payload</span> <span class="o">=</span> <span class="n">decode_json</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</span><span data-line="126">        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+</span><span data-line="127">            <span class="n">msg</span> <span class="o">=</span> <span class="s2">"Event message must be a JSON object"</span>
+</span><span data-line="128">            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+</span><span data-line="129">        <span class="n">version</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"v"</span><span class="p">,</span> <span class="n">WIRE_VERSION</span><span class="p">)</span>
+</span><span data-line="130">        <span class="k">if</span> <span class="n">version</span> <span class="o">!=</span> <span class="n">WIRE_VERSION</span><span class="p">:</span>
+</span><span data-line="131">            <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Unsupported event wire version </span><span class="si">{</span><span class="n">version</span><span class="si">!r}</span><span class="s2">; expected </span><span class="si">{</span><span class="n">WIRE_VERSION</span><span class="si">}</span><span class="s2">"</span>
+</span><span data-line="132">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+</span><span data-line="133">        <span class="k">return</span> <span class="n">Message</span><span class="p">(</span>
+</span><span data-line="134">            <span class="n">args</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"args"</span><span class="p">,</span> <span class="p">())),</span>
+</span><span data-line="135">            <span class="n">kwargs</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"kwargs"</span><span class="p">,</span> <span class="p">{})),</span>
+</span><span data-line="136">            <span class="n">headers</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"h"</span><span class="p">,</span> <span class="p">{})),</span>
+</span><span data-line="137">            <span class="n">correlation_id</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"cid"</span><span class="p">),</span>
+</span><span data-line="138">        <span class="p">)</span>
+</span><span data-line="139">
+</span><span data-line="140">    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">invoke</span><span class="p">(</span>
+</span><span data-line="141">        <span class="bp">self</span><span class="p">,</span> <span class="n">fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Awaitable</span><span class="p">[</span><span class="n">Any</span><span class="p">]],</span> <span class="n">event_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">Message</span>
+</span><span data-line="142">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+</span><span data-line="143">        <span class="n">context</span> <span class="o">=</span> <span class="n">EventContext</span><span class="p">(</span><span class="n">event_id</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">correlation_id</span><span class="p">)</span>
+</span><span data-line="144">        <span class="n">target</span> <span class="o">=</span> <span class="n">_unwrap</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+</span><span data-line="145">        <span class="n">hints</span> <span class="o">=</span> <span class="n">_type_hints</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+</span><span data-line="146">        <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">kwargs</span><span class="p">)</span>
+</span><span data-line="147">        <span class="n">context_params</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">hint</span> <span class="ow">in</span> <span class="n">hints</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">hint</span> <span class="ow">is</span> <span class="n">EventContext</span><span class="p">]</span>
+</span><span data-line="148">        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">typed</span><span class="p">:</span>
+</span><span data-line="149">            <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span> <span class="o">=</span> <span class="n">_convert_arguments</span><span class="p">(</span>
+</span><span data-line="150">                <span class="n">target</span><span class="p">,</span> <span class="n">hints</span><span class="p">,</span> <span class="n">context_params</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="n">decoders</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_decoders</span>
+</span><span data-line="151">            <span class="p">)</span>
+</span><span data-line="152">        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">context_params</span><span class="p">:</span>
+</span><span data-line="153">            <span class="n">kwargs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">context</span>
+</span><span data-line="154">        <span class="k">with</span> <span class="n">use_event</span><span class="p">(</span><span class="n">context</span><span class="p">):</span>
+</span><span data-line="155">            <span class="k">return</span> <span class="k">await</span> <span class="n">fn</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+</span><span data-line="156">
+</span><span data-line="157">
+</span><span data-line="158"><span class="k">def</span><span class="w"> </span><span class="nf">_pydantic_hooks</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]],</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]]:</span>
+</span><span data-line="159"><span class="w">    </span><span class="sd">"""Litestar's Pydantic encoders/decoders, when Pydantic is installed."""</span>
+</span><span data-line="160">    <span class="k">try</span><span class="p">:</span>
+</span><span data-line="161">        <span class="kn">from</span><span class="w"> </span><span class="nn">litestar.plugins.pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">PydanticInitPlugin</span>
+</span><span data-line="162">    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+</span><span data-line="163">        <span class="k">return</span> <span class="p">{},</span> <span class="p">[]</span>
+</span><span data-line="164">    <span class="k">return</span> <span class="n">PydanticInitPlugin</span><span class="o">.</span><span class="n">encoders</span><span class="p">(),</span> <span class="n">PydanticInitPlugin</span><span class="o">.</span><span class="n">decoders</span><span class="p">()</span>
+</span><span data-line="165">
+</span><span data-line="166">
+</span><span data-line="167"><span class="k">def</span><span class="w"> </span><span class="nf">_unwrap</span><span class="p">(</span><span class="n">fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+</span><span data-line="168"><span class="w">    </span><span class="sd">"""Find the user's function behind Litestar's listener error-handling wrapper.</span>
+</span><span data-line="169">
+</span><span data-line="170"><span class="sd">    ``EventListener`` stores ``wrapped(*args, **kwargs)``, a closure over the</span>
+</span><span data-line="171"><span class="sd">    decorated function, which hides its annotations. Follow ``__wrapped__``</span>
+</span><span data-line="172"><span class="sd">    where it exists, else that closure's ``fn`` cell. If neither is found the</span>
+</span><span data-line="173"><span class="sd">    wrapper is returned and no conversion happens.</span>
+</span><span data-line="174"><span class="sd">    """</span>
+</span><span data-line="175">    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+</span><span data-line="176">        <span class="n">inner</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="s2">"__wrapped__"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</span><span data-line="177">        <span class="k">if</span> <span class="n">inner</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="178">            <span class="n">code</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="s2">"__code__"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</span><span data-line="179">            <span class="n">cells</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="s2">"__closure__"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</span><span data-line="180">            <span class="k">if</span> <span class="n">code</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">cells</span> <span class="ow">or</span> <span class="s2">"fn"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">code</span><span class="o">.</span><span class="n">co_freevars</span><span class="p">:</span>
+</span><span data-line="181">                <span class="k">break</span>
+</span><span data-line="182">            <span class="n">inner</span> <span class="o">=</span> <span class="n">cells</span><span class="p">[</span><span class="n">code</span><span class="o">.</span><span class="n">co_freevars</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">"fn"</span><span class="p">)]</span><span class="o">.</span><span class="n">cell_contents</span>
+</span><span data-line="183">            <span class="k">if</span> <span class="ow">not</span> <span class="nb">callable</span><span class="p">(</span><span class="n">inner</span><span class="p">):</span>
+</span><span data-line="184">                <span class="k">break</span>
+</span><span data-line="185">        <span class="n">fn</span> <span class="o">=</span> <span class="n">inner</span>
+</span><span data-line="186">    <span class="k">return</span> <span class="n">fn</span>
+</span><span data-line="187">
+</span><span data-line="188">
+<div class="viewcode-block" id="listener_name">
+<a class="viewcode-back" href="../../modules.html#litestar_events.codec.listener_name">[docs]</a>
+</span><span data-line="189"><span class="k">def</span><span class="w"> </span><span class="nf">listener_name</span><span class="p">(</span><span class="n">fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span data-line="190"><span class="w">    </span><span class="sd">"""Name of the user's function behind a listener's ``fn``, for messages."""</span>
+</span><span data-line="191">    <span class="n">target</span> <span class="o">=</span> <span class="n">_unwrap</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+</span><span data-line="192">    <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="s2">"__name__"</span><span class="p">,</span> <span class="nb">repr</span><span class="p">(</span><span class="n">target</span><span class="p">))</span></div>
+
+</span><span data-line="193">
+</span><span data-line="194">
+</span><span data-line="195"><span class="nd">@functools</span><span class="o">.</span><span class="n">lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="mi">256</span><span class="p">)</span>
+</span><span data-line="196"><span class="k">def</span><span class="w"> </span><span class="nf">_type_hints</span><span class="p">(</span><span class="n">fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+</span><span data-line="197"><span class="w">    </span><span class="sd">"""Resolve ``fn``'s annotations; ``{}`` (with one warning) if they can't be.</span>
+</span><span data-line="198">
+</span><span data-line="199"><span class="sd">    Annotations that only import under ``TYPE_CHECKING`` raise ``NameError``;</span>
+</span><span data-line="200"><span class="sd">    skipping conversion keeps such listeners working as they always did.</span>
+</span><span data-line="201"><span class="sd">    """</span>
+</span><span data-line="202">    <span class="k">try</span><span class="p">:</span>
+</span><span data-line="203">        <span class="k">return</span> <span class="n">typing</span><span class="o">.</span><span class="n">get_type_hints</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+</span><span data-line="204">    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+</span><span data-line="205">        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+</span><span data-line="206">            <span class="s2">"Cannot resolve annotations of listener </span><span class="si">%s</span><span class="s2">; arguments are passed "</span>
+</span><span data-line="207">            <span class="s2">"unconverted"</span><span class="p">,</span>
+</span><span data-line="208">            <span class="nb">getattr</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="s2">"__name__"</span><span class="p">,</span> <span class="nb">repr</span><span class="p">(</span><span class="n">fn</span><span class="p">)),</span>
+</span><span data-line="209">            <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span data-line="210">        <span class="p">)</span>
+</span><span data-line="211">        <span class="k">return</span> <span class="p">{}</span>
+</span><span data-line="212">
+</span><span data-line="213">
+</span><span data-line="214"><span class="k">def</span><span class="w"> </span><span class="nf">_is_model</span><span class="p">(</span><span class="n">hint</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span data-line="215">    <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hint</span><span class="p">,</span> <span class="nb">type</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+</span><span data-line="216">        <span class="n">dataclasses</span><span class="o">.</span><span class="n">is_dataclass</span><span class="p">(</span><span class="n">hint</span><span class="p">)</span>
+</span><span data-line="217">        <span class="ow">or</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">hint</span><span class="p">,</span> <span class="n">msgspec</span><span class="o">.</span><span class="n">Struct</span><span class="p">)</span>
+</span><span data-line="218">        <span class="ow">or</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">hint</span><span class="p">,</span> <span class="s2">"model_validate"</span><span class="p">)</span>
+</span><span data-line="219">        <span class="ow">or</span> <span class="n">typing</span><span class="o">.</span><span class="n">is_typeddict</span><span class="p">(</span><span class="n">hint</span><span class="p">)</span>
+</span><span data-line="220">    <span class="p">)</span>
+</span><span data-line="221">
+</span><span data-line="222">
+</span><span data-line="223"><span class="k">def</span><span class="w"> </span><span class="nf">_convert_arguments</span><span class="p">(</span>
+</span><span data-line="224">    <span class="n">target</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+</span><span data-line="225">    <span class="n">hints</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+</span><span data-line="226">    <span class="n">context_params</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+</span><span data-line="227">    <span class="n">args</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+</span><span data-line="228">    <span class="n">kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+</span><span data-line="229">    <span class="o">*</span><span class="p">,</span>
+</span><span data-line="230">    <span class="n">decoders</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="nb">bool</span><span class="p">],</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]]],</span>
+</span><span data-line="231"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+</span><span data-line="232">    <span class="n">signature</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+</span><span data-line="233">    <span class="n">convert</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span>
+</span><span data-line="234">        <span class="n">msgspec</span><span class="o">.</span><span class="n">convert</span><span class="p">,</span>
+</span><span data-line="235">        <span class="n">dec_hook</span><span class="o">=</span><span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">default_deserializer</span><span class="p">,</span> <span class="n">type_decoders</span><span class="o">=</span><span class="n">decoders</span><span class="p">),</span>
+</span><span data-line="236">        <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+</span><span data-line="237">    <span class="p">)</span>
+</span><span data-line="238">    <span class="n">whole</span> <span class="o">=</span> <span class="n">_whole_body_parameter</span><span class="p">(</span><span class="n">signature</span><span class="p">,</span> <span class="n">hints</span><span class="p">,</span> <span class="n">context_params</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span>
+</span><span data-line="239">    <span class="k">if</span> <span class="n">whole</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="240">        <span class="k">return</span> <span class="p">(),</span> <span class="p">{</span><span class="n">whole</span><span class="p">:</span> <span class="n">convert</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="n">hints</span><span class="p">[</span><span class="n">whole</span><span class="p">])}</span>
+</span><span data-line="241">    <span class="n">bound</span> <span class="o">=</span> <span class="n">signature</span><span class="o">.</span><span class="n">bind_partial</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</span><span data-line="242">    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">bound</span><span class="o">.</span><span class="n">arguments</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+</span><span data-line="243">        <span class="n">kind</span> <span class="o">=</span> <span class="n">signature</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">kind</span>
+</span><span data-line="244">        <span class="k">if</span> <span class="p">(</span>
+</span><span data-line="245">            <span class="n">name</span> <span class="ow">in</span> <span class="n">hints</span>
+</span><span data-line="246">            <span class="ow">and</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">context_params</span>
+</span><span data-line="247">            <span class="ow">and</span> <span class="n">kind</span>
+</span><span data-line="248">            <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="n">inspect</span><span class="o">.</span><span class="n">Parameter</span><span class="o">.</span><span class="n">VAR_POSITIONAL</span><span class="p">,</span> <span class="n">inspect</span><span class="o">.</span><span class="n">Parameter</span><span class="o">.</span><span class="n">VAR_KEYWORD</span><span class="p">}</span>
+</span><span data-line="249">        <span class="p">):</span>
+</span><span data-line="250">            <span class="n">bound</span><span class="o">.</span><span class="n">arguments</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">convert</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">hints</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
+</span><span data-line="251">    <span class="k">return</span> <span class="n">bound</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="n">bound</span><span class="o">.</span><span class="n">kwargs</span>
+</span><span data-line="252">
+</span><span data-line="253">
+</span><span data-line="254"><span class="k">def</span><span class="w"> </span><span class="nf">_whole_body_parameter</span><span class="p">(</span>
+</span><span data-line="255">    <span class="n">signature</span><span class="p">:</span> <span class="n">inspect</span><span class="o">.</span><span class="n">Signature</span><span class="p">,</span>
+</span><span data-line="256">    <span class="n">hints</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+</span><span data-line="257">    <span class="n">context_params</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+</span><span data-line="258">    <span class="n">args</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+</span><span data-line="259">    <span class="n">kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+</span><span data-line="260"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="261"><span class="w">    </span><span class="sd">"""Name of the lone model parameter that should receive the whole payload.</span>
+</span><span data-line="262">
+</span><span data-line="263"><span class="sd">    Applies when the listener has one ordinary parameter (besides injected</span>
+</span><span data-line="264"><span class="sd">    context and no ``**kwargs``), it is annotated with a model type, and the</span>
+</span><span data-line="265"><span class="sd">    event was emitted with keyword arguments that do not name that parameter.</span>
+</span><span data-line="266"><span class="sd">    """</span>
+</span><span data-line="267">    <span class="n">kinds</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">Parameter</span>
+</span><span data-line="268">    <span class="n">params</span> <span class="o">=</span> <span class="p">[</span>
+</span><span data-line="269">        <span class="n">p</span>
+</span><span data-line="270">        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">signature</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+</span><span data-line="271">        <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">context_params</span>
+</span><span data-line="272">        <span class="ow">and</span> <span class="n">p</span><span class="o">.</span><span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="n">kinds</span><span class="o">.</span><span class="n">VAR_POSITIONAL</span><span class="p">,</span> <span class="n">kinds</span><span class="o">.</span><span class="n">VAR_KEYWORD</span><span class="p">}</span>
+</span><span data-line="273">    <span class="p">]</span>
+</span><span data-line="274">    <span class="n">has_var_kw</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">kind</span> <span class="ow">is</span> <span class="n">kinds</span><span class="o">.</span><span class="n">VAR_KEYWORD</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">signature</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+</span><span data-line="275">    <span class="k">if</span> <span class="n">has_var_kw</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">params</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">args</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">:</span>
+</span><span data-line="276">        <span class="k">return</span> <span class="kc">None</span>
+</span><span data-line="277">    <span class="p">(</span><span class="n">param</span><span class="p">,)</span> <span class="o">=</span> <span class="n">params</span>
+</span><span data-line="278">    <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">_is_model</span><span class="p">(</span><span class="n">hints</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">param</span><span class="o">.</span><span class="n">name</span><span class="p">)):</span>
+</span><span data-line="279">        <span class="k">return</span> <span class="kc">None</span>
+</span><span data-line="280">    <span class="k">return</span> <span class="n">param</span><span class="o">.</span><span class="n">name</span>
+</span></pre></div>
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright"><p>2026, Hasan Sezer Taşan</p>
+  
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> and
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+  <a href="https://github.com/hasansezertasan/litestar_events" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script>let toggleHintShow = 'Click to show';</script>
+      <script>let toggleHintHide = 'Click to hide';</script>
+      <script>let toggleOpenOnPrint = 'true';</script>
+      <script src="../../_static/togglebutton.js?v=b8b12719"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+      <script src="../../_static/shibuya.js?v=50760d75"></script>
+      <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script></body>
+</html>

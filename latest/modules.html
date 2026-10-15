@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="amber" data-content_root="./">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Modules - litestar_events</title><link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Repository setup" href="maintaining/setup.html" /><link rel="prev" title="Producer and worker processes" href="producer_worker.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/togglebutton.css?v=9c3e77be" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx_paramlinks.css" />
+    <link media="print" rel="stylesheet" type="text/css" href="_static/print.css?v=20ff2c19" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/><meta property="og:title" content="Modules"/>
+    <meta name="twitter:card" content="summary"/>
+  </head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="index.html">
+      
+      
+      <strong>litestar_events</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="nav-versions">
+    <button type="button" aria-label="Versions">
+      <span class="md:hidden">Versions</span>
+      <span class="hidden md:inline">0.1</span>
+      <i class="i-lucide chevron-down"></i>
+    </button>
+    <div class="nav-versions-choices"><ul><li><a href="/litestar_events/latest/">latest</a></li><li><a href="/litestar_events/0.1/">0.1</a></li></ul></div>
+  </div><div class="sy-head-socials">
+  <a href="https://github.com/hasansezertasan/litestar_events" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6">
+        <div class="globaltoc" data-expand-depth="0"><p class="caption" role="heading" aria-level="3"><span class="caption-text">Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="producer_worker.html">Producer and worker processes</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Modules</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Maintainer guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="maintaining/setup.html">Repository setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="maintaining/backends.html">Backend design rules</a></li>
+</ul>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#package-litestar-events">Package (<code class="docutils literal notranslate"><span class="pre">litestar_events</span></code>)</a><ul>
+<li><a class="reference internal" href="#litestar_events.config.EventsConfig"><code class="docutils literal notranslate"><span class="pre">EventsConfig</span></code></a><ul>
+<li><a class="reference internal" href="#litestar_events.config.EventsConfig.backend"><code class="docutils literal notranslate"><span class="pre">EventsConfig.backend</span></code></a></li>
+<li><a class="reference internal" href="#litestar_events.config.EventsConfig.backend_options"><code class="docutils literal notranslate"><span class="pre">EventsConfig.backend_options</span></code></a></li>
+<li><a class="reference internal" href="#litestar_events.config.EventsConfig.role"><code class="docutils literal notranslate"><span class="pre">EventsConfig.role</span></code></a></li>
+<li><a class="reference internal" href="#litestar_events.config.EventsConfig.codec"><code class="docutils literal notranslate"><span class="pre">EventsConfig.codec</span></code></a></li>
+<li><a class="reference internal" href="#litestar_events.config.EventsConfig.typed_decoding"><code class="docutils literal notranslate"><span class="pre">EventsConfig.typed_decoding</span></code></a></li>
+<li><a class="reference internal" href="#litestar_events.config.EventsConfig.local_listeners"><code class="docutils literal notranslate"><span class="pre">EventsConfig.local_listeners</span></code></a></li>
+<li><a class="reference internal" href="#litestar_events.config.EventsConfig.request_id_header"><code class="docutils literal notranslate"><span class="pre">EventsConfig.request_id_header</span></code></a></li>
+<li><a class="reference internal" href="#litestar_events.config.EventsConfig.request_id_exclude_path_pattern"><code class="docutils literal notranslate"><span class="pre">EventsConfig.request_id_exclude_path_pattern</span></code></a></li>
+<li><a class="reference internal" href="#litestar_events.config.EventsConfig.echo_request_id"><code class="docutils literal notranslate"><span class="pre">EventsConfig.echo_request_id</span></code></a></li>
+<li><a class="reference internal" href="#litestar_events.config.EventsConfig.drain_timeout"><code class="docutils literal notranslate"><span class="pre">EventsConfig.drain_timeout</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#litestar_events.config.EventsRole"><code class="docutils literal notranslate"><span class="pre">EventsRole</span></code></a><ul>
+<li><a class="reference internal" href="#litestar_events.config.EventsRole.EMBEDDED"><code class="docutils literal notranslate"><span class="pre">EventsRole.EMBEDDED</span></code></a></li>
+<li><a class="reference internal" href="#litestar_events.config.EventsRole.PRODUCER"><code class="docutils literal notranslate"><span class="pre">EventsRole.PRODUCER</span></code></a></li>
+<li><a class="reference internal" href="#litestar_events.config.EventsRole.WORKER"><code class="docutils literal notranslate"><span class="pre">EventsRole.WORKER</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#litestar_events.config.resolve_role"><code class="docutils literal notranslate"><span class="pre">resolve_role()</span></code></a></li>
+<li><a class="reference internal" href="#litestar_events.plugin.EventsPlugin"><code class="docutils literal notranslate"><span class="pre">EventsPlugin</span></code></a><ul>
+<li><a class="reference internal" href="#litestar_events.plugin.EventsPlugin.on_app_init"><code class="docutils literal notranslate"><span class="pre">EventsPlugin.on_app_init()</span></code></a></li>
+<li><a class="reference internal" href="#litestar_events.plugin.EventsPlugin.on_cli_init"><code class="docutils literal notranslate"><span class="pre">EventsPlugin.on_cli_init()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#litestar_events.codec.WIRE_VERSION"><code class="docutils literal notranslate"><span class="pre">WIRE_VERSION</span></code></a></li>
+<li><a class="reference internal" href="#litestar_events.codec.Codec"><code class="docutils literal notranslate"><span class="pre">Codec</span></code></a><ul>
+<li><a class="reference internal" href="#litestar_events.codec.Codec.encode"><code class="docutils literal notranslate"><span class="pre">Codec.encode()</span></code></a></li>
+<li><a class="reference internal" href="#litestar_events.codec.Codec.decode"><code class="docutils literal notranslate"><span class="pre">Codec.decode()</span></code></a></li>
+<li><a class="reference internal" href="#litestar_events.codec.Codec.invoke"><code class="docutils literal notranslate"><span class="pre">Codec.invoke()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#litestar_events.codec.JSONCodec"><code class="docutils literal notranslate"><span class="pre">JSONCodec</span></code></a><ul>
+<li><a class="reference internal" href="#litestar_events.codec.JSONCodec.content_type"><code class="docutils literal notranslate"><span class="pre">JSONCodec.content_type</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#litestar_events.codec.Message"><code class="docutils literal notranslate"><span class="pre">Message</span></code></a></li>
+<li><a class="reference internal" href="#litestar_events.codec.listener_name"><code class="docutils literal notranslate"><span class="pre">listener_name()</span></code></a></li>
+<li><a class="reference internal" href="#litestar_events.context.EventContext"><code class="docutils literal notranslate"><span class="pre">EventContext</span></code></a></li>
+<li><a class="reference internal" href="#litestar_events.context.current_event"><code class="docutils literal notranslate"><span class="pre">current_event()</span></code></a></li>
+<li><a class="reference internal" href="#litestar_events.context.event_headers"><code class="docutils literal notranslate"><span class="pre">event_headers()</span></code></a></li>
+<li><a class="reference internal" href="#litestar_events.context.new_correlation_id"><code class="docutils literal notranslate"><span class="pre">new_correlation_id()</span></code></a></li>
+<li><a class="reference internal" href="#litestar_events.context.outgoing_correlation_id"><code class="docutils literal notranslate"><span class="pre">outgoing_correlation_id()</span></code></a></li>
+<li><a class="reference internal" href="#litestar_events.context.outgoing_headers"><code class="docutils literal notranslate"><span class="pre">outgoing_headers()</span></code></a></li>
+<li><a class="reference internal" href="#litestar_events.context.use_event"><code class="docutils literal notranslate"><span class="pre">use_event()</span></code></a></li>
+<li><a class="reference internal" href="#litestar_events.middleware.RequestIdMiddleware"><code class="docutils literal notranslate"><span class="pre">RequestIdMiddleware</span></code></a><ul>
+<li><a class="reference internal" href="#litestar_events.middleware.RequestIdMiddleware.handle"><code class="docutils literal notranslate"><span class="pre">RequestIdMiddleware.handle()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#backends-litestar-events-contrib">Backends (<code class="docutils literal notranslate"><span class="pre">litestar_events.contrib</span></code>)</a></li>
+</ul>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="index.html"><span itemprop="name">litestar_events</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">Modules</strong>
+        <meta itemprop="position" content="2" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <article class="yue" role="main">
+          <section id="modules">
+<h1>Modules<a class="headerlink" href="#modules" title="Link to this heading">#</a></h1>
+<p>An overview of the packages that make up <code class="docutils literal notranslate"><span class="pre">litestar_events</span></code>.
+The API reference below is generated automatically from the source docstrings.</p>
+<section id="package-litestar-events">
+<h2>Package (<code class="docutils literal notranslate"><span class="pre">litestar_events</span></code>)<a class="headerlink" href="#package-litestar-events" title="Link to this heading">#</a></h2>
+<p>Shared emitter machinery, configuration, and the Litestar plugin.</p>
+<p id="module-litestar_events">Top-level package for the project.</p>
+<p id="module-litestar_events.config">Configuration shared by the producer and the worker process.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="litestar_events.config.EventsConfig">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">litestar_events.config.</span></span><span class="sig-name descname"><span class="pre">EventsConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">backend=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend_options=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">role=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">codec=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">typed_decoding=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">local_listeners=()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">request_id_header=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">request_id_exclude_path_pattern=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">echo_request_id=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drain_timeout=30.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/litestar_events/config.html#EventsConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#litestar_events.config.EventsConfig" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Settings for <a class="reference internal" href="#litestar_events.plugin.EventsPlugin" title="litestar_events.plugin.EventsPlugin"><code class="xref py py-class docutils literal notranslate"><span class="pre">EventsPlugin</span></code></a>.</p>
+<p>Import the same config in the web app and the worker: the worker loads the
+same Litestar app (<code class="docutils literal notranslate"><span class="pre">litestar</span> <span class="pre">events</span> <span class="pre">run</span></code>) and only the role differs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>backend</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#type" title="(in Python v3.15)"><em>type</em></a><em>[</em><em>BaseEventEmitterBackend</em><em>] </em><em>| </em><em>None</em>)</p></li>
+<li><p><strong>backend_options</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><em>dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>, </em><em>Any</em><em>]</em>)</p></li>
+<li><p><strong>role</strong> (<a class="reference internal" href="#litestar_events.config.EventsRole" title="litestar_events.config.EventsRole"><em>EventsRole</em></a><em> | </em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>codec</strong> (<a class="reference internal" href="#litestar_events.codec.Codec" title="litestar_events.codec.Codec"><em>Codec</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>typed_decoding</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>)</p></li>
+<li><p><strong>local_listeners</strong> (<em>Sequence</em><em>[</em><em>EventListener</em><em>]</em>)</p></li>
+<li><p><strong>request_id_header</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>request_id_exclude_path_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em> | </em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>, </em><em>...</em><em>] </em><em>| </em><em>None</em>)</p></li>
+<li><p><strong>echo_request_id</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>)</p></li>
+<li><p><strong>drain_timeout</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><em>float</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="litestar_events.config.EventsConfig.backend">
+<span class="sig-name descname"><span class="pre">backend</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#type" title="(in Python v3.15)"><span class="pre">type</span></a><span class="p"><span class="pre">[</span></span><span class="pre">BaseEventEmitterBackend</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#litestar_events.config.EventsConfig.backend" title="Link to this definition">#</a></dt>
+<dd><p>Emitter backend to install on the app. <code class="docutils literal notranslate"><span class="pre">None</span></code> keeps the app’s own.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="litestar_events.config.EventsConfig.backend_options">
+<span class="sig-name descname"><span class="pre">backend_options</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#litestar_events.config.EventsConfig.backend_options" title="Link to this definition">#</a></dt>
+<dd><p>Keyword arguments forwarded to the backend constructor.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="litestar_events.config.EventsConfig.role">
+<span class="sig-name descname"><span class="pre">role</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#litestar_events.config.EventsRole" title="litestar_events.config.EventsRole"><span class="pre">EventsRole</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#litestar_events.config.EventsConfig.role" title="Link to this definition">#</a></dt>
+<dd><p>Role for this process; <code class="docutils literal notranslate"><span class="pre">events</span> <span class="pre">run</span></code> always uses <code class="docutils literal notranslate"><span class="pre">worker</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="litestar_events.config.EventsConfig.codec">
+<span class="sig-name descname"><span class="pre">codec</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#litestar_events.codec.Codec" title="litestar_events.codec.Codec"><span class="pre">Codec</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#litestar_events.config.EventsConfig.codec" title="Link to this definition">#</a></dt>
+<dd><p>Wire format shared by producer and worker; default is <code class="xref py py-class docutils literal notranslate"><span class="pre">JSONCodec</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="litestar_events.config.EventsConfig.typed_decoding">
+<span class="sig-name descname"><span class="pre">typed_decoding</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><span class="pre">bool</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#litestar_events.config.EventsConfig.typed_decoding" title="Link to this definition">#</a></dt>
+<dd><p>Convert worker-side arguments to the listener’s annotated types.</p>
+<p>Only applies to the default codec; a custom <code class="docutils literal notranslate"><span class="pre">codec</span></code> decides for itself.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="litestar_events.config.EventsConfig.local_listeners">
+<span class="sig-name descname"><span class="pre">local_listeners</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">EventListener</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">()</span></em><a class="headerlink" href="#litestar_events.config.EventsConfig.local_listeners" title="Link to this definition">#</a></dt>
+<dd><p>Listeners that run in the web (producer) process instead of the worker.</p>
+<p>A <code class="docutils literal notranslate"><span class="pre">producer</span></code> calls them directly from <code class="docutils literal notranslate"><span class="pre">app.emit()</span></code> without the broker;
+a <code class="docutils literal notranslate"><span class="pre">worker</span></code> skips them. Each must also be in the app’s <code class="docutils literal notranslate"><span class="pre">listeners</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="litestar_events.config.EventsConfig.request_id_header">
+<span class="sig-name descname"><span class="pre">request_id_header</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#litestar_events.config.EventsConfig.request_id_header" title="Link to this definition">#</a></dt>
+<dd><p>Request header whose value becomes the correlation id of events emitted
+while serving the request (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;x-request-id&quot;</span></code>). <code class="docutils literal notranslate"><span class="pre">None</span></code> adds no
+middleware.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="litestar_events.config.EventsConfig.request_id_exclude_path_pattern">
+<span class="sig-name descname"><span class="pre">request_id_exclude_path_pattern</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#litestar_events.config.EventsConfig.request_id_exclude_path_pattern" title="Link to this definition">#</a></dt>
+<dd><p>Regex (or regexes) of paths the request-id middleware skips, such as
+<code class="docutils literal notranslate"><span class="pre">&quot;^/health&quot;</span></code>. Routes can also opt out with
+<code class="docutils literal notranslate"><span class="pre">opt={&quot;exclude_request_id&quot;:</span> <span class="pre">True}</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="litestar_events.config.EventsConfig.echo_request_id">
+<span class="sig-name descname"><span class="pre">echo_request_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><span class="pre">bool</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#litestar_events.config.EventsConfig.echo_request_id" title="Link to this definition">#</a></dt>
+<dd><p>Also set the request id on the response (needs <code class="docutils literal notranslate"><span class="pre">request_id_header</span></code>).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="litestar_events.config.EventsConfig.drain_timeout">
+<span class="sig-name descname"><span class="pre">drain_timeout</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><span class="pre">float</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">30.0</span></em><a class="headerlink" href="#litestar_events.config.EventsConfig.drain_timeout" title="Link to this definition">#</a></dt>
+<dd><p>Default seconds <code class="docutils literal notranslate"><span class="pre">events</span> <span class="pre">drain</span></code> waits for in-flight listeners.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="litestar_events.config.EventsRole">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">litestar_events.config.</span></span><span class="sig-name descname"><span class="pre">EventsRole</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">values</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/litestar_events/config.html#EventsRole"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#litestar_events.config.EventsRole" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/enum.html#enum.Enum" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code></a></p>
+<p>What an emitter does in the current process.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="litestar_events.config.EventsRole.EMBEDDED">
+<span class="sig-name descname"><span class="pre">EMBEDDED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'embedded'</span></em><a class="headerlink" href="#litestar_events.config.EventsRole.EMBEDDED" title="Link to this definition">#</a></dt>
+<dd><p>Publish and consume in the same process (the historical behavior).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="litestar_events.config.EventsRole.PRODUCER">
+<span class="sig-name descname"><span class="pre">PRODUCER</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'producer'</span></em><a class="headerlink" href="#litestar_events.config.EventsRole.PRODUCER" title="Link to this definition">#</a></dt>
+<dd><p>no broker subscription, no consumer task.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Publish only</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="litestar_events.config.EventsRole.WORKER">
+<span class="sig-name descname"><span class="pre">WORKER</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'worker'</span></em><a class="headerlink" href="#litestar_events.config.EventsRole.WORKER" title="Link to this definition">#</a></dt>
+<dd><p>listeners run here, <code class="docutils literal notranslate"><span class="pre">emit</span></code> is rejected.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Consume only</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="litestar_events.config.resolve_role">
+<span class="sig-prename descclassname"><span class="pre">litestar_events.config.</span></span><span class="sig-name descname"><span class="pre">resolve_role</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">role</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/litestar_events/config.html#resolve_role"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#litestar_events.config.resolve_role" title="Link to this definition">#</a></dt>
+<dd><p>Resolve <code class="docutils literal notranslate"><span class="pre">role</span></code> to an <a class="reference internal" href="#litestar_events.config.EventsRole" title="litestar_events.config.EventsRole"><code class="xref py py-class docutils literal notranslate"><span class="pre">EventsRole</span></code></a>; <code class="docutils literal notranslate"><span class="pre">None</span></code> means embedded.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.15)"><strong>ValueError</strong></a> – if <code class="docutils literal notranslate"><span class="pre">role</span></code> is not a valid role.</p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>role</strong> (<a class="reference internal" href="#litestar_events.config.EventsRole" title="litestar_events.config.EventsRole"><em>EventsRole</em></a><em> | </em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em> | </em><em>None</em>)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#litestar_events.config.EventsRole" title="litestar_events.config.EventsRole"><em>EventsRole</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<p id="module-litestar_events.plugin">Litestar plugin wiring the emitter backend and the <code class="docutils literal notranslate"><span class="pre">events</span></code> CLI group.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="litestar_events.plugin.EventsPlugin">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">litestar_events.plugin.</span></span><span class="sig-name descname"><span class="pre">EventsPlugin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/litestar_events/plugin.html#EventsPlugin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#litestar_events.plugin.EventsPlugin" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">InitPluginProtocol</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">CLIPlugin</span></code></p>
+<p>Install an emitter backend and add the <code class="docutils literal notranslate"><span class="pre">litestar</span> <span class="pre">events</span></code> commands.</p>
+<p>Use the same plugin and config in the web app and the worker. The worker
+runs the same Litestar app through <code class="docutils literal notranslate"><span class="pre">litestar</span> <span class="pre">events</span> <span class="pre">run</span></code>, which
+always consumes only; set <code class="docutils literal notranslate"><span class="pre">EventsConfig(role=&quot;producer&quot;)</span></code> so the web
+process publishes only.</p>
+<p>Plugin order matters for the request id: with <code class="docutils literal notranslate"><span class="pre">request_id_header</span></code> set,
+the middleware goes first in the app’s list when this plugin initializes,
+so list <code class="docutils literal notranslate"><span class="pre">EventsPlugin</span></code> last in <code class="docutils literal notranslate"><span class="pre">plugins=[...]</span></code> to keep it outermost.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>config</strong> (<a class="reference internal" href="#litestar_events.config.EventsConfig" title="litestar_events.config.EventsConfig"><em>EventsConfig</em></a><em> | </em><em>None</em>)</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="litestar_events.plugin.EventsPlugin.on_app_init">
+<span class="sig-name descname"><span class="pre">on_app_init</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app_config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/litestar_events/plugin.html#EventsPlugin.on_app_init"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#litestar_events.plugin.EventsPlugin.on_app_init" title="Link to this definition">#</a></dt>
+<dd><p>Receive the <code class="xref py py-class docutils literal notranslate"><span class="pre">AppConfig</span></code> instance after <cite>on_app_init</cite> hooks have been called.</p>
+<p class="rubric">Examples</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">litestar</span><span class="w"> </span><span class="kn">import</span> <span class="n">Litestar</span><span class="p">,</span> <span class="n">get</span>
+</span><span data-line="2"><span class="kn">from</span><span class="w"> </span><span class="nn">litestar.di</span><span class="w"> </span><span class="kn">import</span> <span class="n">Provide</span>
+</span><span data-line="3"><span class="kn">from</span><span class="w"> </span><span class="nn">litestar.plugins</span><span class="w"> </span><span class="kn">import</span> <span class="n">InitPluginProtocol</span>
+</span><span data-line="4">
+</span><span data-line="5">
+</span><span data-line="6"><span class="k">def</span><span class="w"> </span><span class="nf">get_name</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span data-line="7">    <span class="k">return</span> <span class="s2">"world"</span>
+</span><span data-line="8">
+</span><span data-line="9">
+</span><span data-line="10"><span class="nd">@get</span><span class="p">(</span><span class="s2">"/my-path"</span><span class="p">)</span>
+</span><span data-line="11"><span class="k">def</span><span class="w"> </span><span class="nf">my_route_handler</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+</span><span data-line="12">    <span class="k">return</span> <span class="p">{</span><span class="s2">"hello"</span><span class="p">:</span> <span class="n">name</span><span class="p">}</span>
+</span><span data-line="13">
+</span><span data-line="14">
+</span><span data-line="15"><span class="k">class</span><span class="w"> </span><span class="nc">MyPlugin</span><span class="p">(</span><span class="n">InitPluginProtocol</span><span class="p">):</span>
+</span><span data-line="16">    <span class="k">def</span><span class="w"> </span><span class="nf">on_app_init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_config</span><span class="p">:</span> <span class="n">AppConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppConfig</span><span class="p">:</span>
+</span><span data-line="17">        <span class="n">app_config</span><span class="o">.</span><span class="n">dependencies</span><span class="p">[</span><span class="s2">"name"</span><span class="p">]</span> <span class="o">=</span> <span class="n">Provide</span><span class="p">(</span><span class="n">get_name</span><span class="p">)</span>
+</span><span data-line="18">        <span class="n">app_config</span><span class="o">.</span><span class="n">route_handlers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">my_route_handler</span><span class="p">)</span>
+</span><span data-line="19">        <span class="k">return</span> <span class="n">app_config</span>
+</span><span data-line="20">
+</span><span data-line="21">
+</span><span data-line="22"><span class="n">app</span> <span class="o">=</span> <span class="n">Litestar</span><span class="p">(</span><span class="n">plugins</span><span class="o">=</span><span class="p">[</span><span class="n">MyPlugin</span><span class="p">()])</span>
+</span></pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><span class="target" id="litestar_events.plugin.EventsPlugin.on_app_init.params.app_config"></span><strong>app_config</strong><a class="paramlink headerlink reference internal" href="#litestar_events.plugin.EventsPlugin.on_app_init.params.app_config">¶</a> – The <code class="xref py py-class docutils literal notranslate"><span class="pre">AppConfig</span></code> instance.</p></li>
+<li><p><strong>app_config</strong> (<em>AppConfig</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The app config object.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>AppConfig</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="litestar_events.plugin.EventsPlugin.on_cli_init">
+<span class="sig-name descname"><span class="pre">on_cli_init</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cli</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/litestar_events/plugin.html#EventsPlugin.on_cli_init"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#litestar_events.plugin.EventsPlugin.on_cli_init" title="Link to this definition">#</a></dt>
+<dd><p>Called when the CLI is initialized.</p>
+<p>This can be used to extend or override existing commands.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><span class="target" id="litestar_events.plugin.EventsPlugin.on_cli_init.params.cli"></span><strong>cli</strong><a class="paramlink headerlink reference internal" href="#litestar_events.plugin.EventsPlugin.on_cli_init.params.cli">¶</a> – The root <code class="xref py py-class docutils literal notranslate"><span class="pre">click.Group</span></code> of the Litestar CLI</p></li>
+<li><p><strong>cli</strong> (<em>Group</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">litestar</span><span class="w"> </span><span class="kn">import</span> <span class="n">Litestar</span>
+</span><span data-line="2"><span class="kn">from</span><span class="w"> </span><span class="nn">litestar.plugins</span><span class="w"> </span><span class="kn">import</span> <span class="n">CLIPluginProtocol</span>
+</span><span data-line="3"><span class="kn">from</span><span class="w"> </span><span class="nn">click</span><span class="w"> </span><span class="kn">import</span> <span class="n">Group</span>
+</span><span data-line="4">
+</span><span data-line="5">
+</span><span data-line="6"><span class="k">class</span><span class="w"> </span><span class="nc">CLIPlugin</span><span class="p">(</span><span class="n">CLIPluginProtocol</span><span class="p">):</span>
+</span><span data-line="7">    <span class="k">def</span><span class="w"> </span><span class="nf">on_cli_init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cli</span><span class="p">:</span> <span class="n">Group</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="8">        <span class="nd">@cli</span><span class="o">.</span><span class="n">command</span><span class="p">()</span>
+</span><span data-line="9">        <span class="k">def</span><span class="w"> </span><span class="nf">is_debug_mode</span><span class="p">(</span><span class="n">app</span><span class="p">:</span> <span class="n">Litestar</span><span class="p">):</span>
+</span><span data-line="10">            <span class="nb">print</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">debug</span><span class="p">)</span>
+</span><span data-line="11">
+</span><span data-line="12">
+</span><span data-line="13"><span class="n">app</span> <span class="o">=</span> <span class="n">Litestar</span><span class="p">(</span><span class="n">plugins</span><span class="o">=</span><span class="p">[</span><span class="n">CLIPlugin</span><span class="p">()])</span>
+</span></pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<p id="module-litestar_events.codec">Wire format and listener-argument binding shared by every backend.</p>
+<p>The producer and the worker must agree on the bytes that travel through the
+broker. This module is that single definition: <a class="reference internal" href="#litestar_events.codec.JSONCodec" title="litestar_events.codec.JSONCodec"><code class="xref py py-class docutils literal notranslate"><span class="pre">JSONCodec</span></code></a> encodes
+<code class="docutils literal notranslate"><span class="pre">emit(event_id,</span> <span class="pre">*args,</span> <span class="pre">**kwargs)</span></code> into a versioned JSON envelope and decodes
+it again on the worker, optionally converting the decoded values into the
+types annotated on the listener’s parameters.</p>
+<dl class="py data">
+<dt class="sig sig-object py" id="litestar_events.codec.WIRE_VERSION">
+<span class="sig-prename descclassname"><span class="pre">litestar_events.codec.</span></span><span class="sig-name descname"><span class="pre">WIRE_VERSION</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#litestar_events.codec.WIRE_VERSION" title="Link to this definition">#</a></dt>
+<dd><p>Version stamped on every message (<code class="docutils literal notranslate"><span class="pre">&quot;v&quot;</span></code>). Messages without it are
+version 1 messages written before the field existed. The envelope fields
+added since (<code class="docutils literal notranslate"><span class="pre">&quot;cid&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;h&quot;</span></code>) are optional, so the version is unchanged.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="litestar_events.codec.Codec">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">litestar_events.codec.</span></span><span class="sig-name descname"><span class="pre">Codec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/litestar_events/codec.html#Codec"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#litestar_events.codec.Codec" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Protocol" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Protocol</span></code></a></p>
+<p>How events cross the broker and reach listeners.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="litestar_events.codec.Codec.encode">
+<span class="sig-name descname"><span class="pre">encode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/litestar_events/codec.html#Codec.encode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#litestar_events.codec.Codec.encode" title="Link to this definition">#</a></dt>
+<dd><p>Serialize an event. Called synchronously from <code class="docutils literal notranslate"><span class="pre">emit</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>message</strong> (<a class="reference internal" href="#litestar_events.codec.Message" title="litestar_events.codec.Message"><em>Message</em></a>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#bytes" title="(in Python v3.15)">bytes</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="litestar_events.codec.Codec.decode">
+<span class="sig-name descname"><span class="pre">decode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/litestar_events/codec.html#Codec.decode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#litestar_events.codec.Codec.decode" title="Link to this definition">#</a></dt>
+<dd><p>Parse a message back into a <a class="reference internal" href="#litestar_events.codec.Message" title="litestar_events.codec.Message"><code class="xref py py-class docutils literal notranslate"><span class="pre">Message</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#bytes" title="(in Python v3.15)"><em>bytes</em></a><em> | </em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#litestar_events.codec.Message" title="litestar_events.codec.Message"><em>Message</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="litestar_events.codec.Codec.invoke">
+<span class="sig-name descname"><span class="pre">invoke</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">event_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">message</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/litestar_events/codec.html#Codec.invoke"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#litestar_events.codec.Codec.invoke" title="Link to this definition">#</a></dt>
+<dd><p>Call a listener with a decoded message.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fn</strong> (<em>Callable</em><em>[</em><em>...</em><em>, </em><em>Awaitable</em><em>[</em><em>Any</em><em>]</em><em>]</em>)</p></li>
+<li><p><strong>event_id</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>)</p></li>
+<li><p><strong>message</strong> (<a class="reference internal" href="#litestar_events.codec.Message" title="litestar_events.codec.Message"><em>Message</em></a>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Awaitable[Any]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="litestar_events.codec.JSONCodec">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">litestar_events.codec.</span></span><span class="sig-name descname"><span class="pre">JSONCodec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">typed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type_encoders</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type_decoders</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/litestar_events/codec.html#JSONCodec"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#litestar_events.codec.JSONCodec" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>JSON envelope: <code class="docutils literal notranslate"><span class="pre">v</span></code>, <code class="docutils literal notranslate"><span class="pre">cid</span></code>, <code class="docutils literal notranslate"><span class="pre">h</span></code>, <code class="docutils literal notranslate"><span class="pre">args</span></code> and <code class="docutils literal notranslate"><span class="pre">kwargs</span></code> keys.</p>
+<p>Encoding uses Litestar’s serializer, so <code class="docutils literal notranslate"><span class="pre">datetime</span></code>, <code class="docutils literal notranslate"><span class="pre">UUID</span></code>, <code class="docutils literal notranslate"><span class="pre">Decimal</span></code>,
+dataclasses and msgspec/Pydantic models are all supported on the producer.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><span class="target" id="litestar_events.codec.JSONCodec.params.typed"></span><strong>typed</strong><a class="paramlink headerlink reference internal" href="#litestar_events.codec.JSONCodec.params.typed">¶</a> – when <code class="docutils literal notranslate"><span class="pre">True</span></code> (default), the worker converts each decoded
+argument to the type annotated on the listener’s parameter
+(<code class="docutils literal notranslate"><span class="pre">order:</span> <span class="pre">Order</span></code>, <code class="docutils literal notranslate"><span class="pre">when:</span> <span class="pre">datetime</span></code>) before calling it. Unannotated
+parameters, and listeners whose annotations cannot be resolved, get
+plain JSON values. When <code class="docutils literal notranslate"><span class="pre">False</span></code>, every listener gets plain JSON
+values, as in earlier releases.</p></li>
+<li><p><span class="target" id="litestar_events.codec.JSONCodec.params.type_encoders"></span><strong>type_encoders</strong><a class="paramlink headerlink reference internal" href="#litestar_events.codec.JSONCodec.params.type_encoders">¶</a> – extra Litestar-style type encoders for <code class="docutils literal notranslate"><span class="pre">encode</span></code>.</p></li>
+<li><p><span class="target" id="litestar_events.codec.JSONCodec.params.type_decoders"></span><strong>type_decoders</strong><a class="paramlink headerlink reference internal" href="#litestar_events.codec.JSONCodec.params.type_decoders">¶</a> – extra <code class="docutils literal notranslate"><span class="pre">(predicate,</span> <span class="pre">decoder)</span></code> pairs for typed decoding.</p></li>
+<li><p><strong>typed</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>)</p></li>
+<li><p><strong>type_encoders</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><em>dict</em></a><em>[</em><em>Any</em><em>, </em><em>Callable</em><em>[</em><em>[</em><em>Any</em><em>]</em><em>, </em><em>Any</em><em>]</em><em>] </em><em>| </em><em>None</em>)</p></li>
+<li><p><strong>type_decoders</strong> (<em>Sequence</em><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><em>tuple</em></a><em>[</em><em>Callable</em><em>[</em><em>[</em><em>Any</em><em>]</em><em>, </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a><em>]</em><em>, </em><em>Callable</em><em>[</em><em>[</em><em>Any</em><em>, </em><em>Any</em><em>]</em><em>, </em><em>Any</em><em>]</em><em>]</em><em>] </em><em>| </em><em>None</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<p>A listener whose single parameter is a model (dataclass, msgspec <code class="docutils literal notranslate"><span class="pre">Struct</span></code>,
+Pydantic model or <code class="docutils literal notranslate"><span class="pre">TypedDict</span></code>) can receive the whole keyword payload:
+<code class="docutils literal notranslate"><span class="pre">app.emit(&quot;order_created&quot;,</span> <span class="pre">id=1,</span> <span class="pre">total=9)</span></code> populates <code class="docutils literal notranslate"><span class="pre">order:</span> <span class="pre">Order</span></code>.
+A parameter annotated <a class="reference internal" href="#litestar_events.context.EventContext" title="litestar_events.context.EventContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">EventContext</span></code></a> is
+injected with the event’s id, headers and correlation id.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="litestar_events.codec.JSONCodec.content_type">
+<span class="sig-name descname"><span class="pre">content_type</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'application/json'</span></em><a class="headerlink" href="#litestar_events.codec.JSONCodec.content_type" title="Link to this definition">#</a></dt>
+<dd><p>Advertised on brokers with a native content-type field (RabbitMQ).</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="litestar_events.codec.Message">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">litestar_events.codec.</span></span><span class="sig-name descname"><span class="pre">Message</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args=()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargs=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">headers=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">correlation_id=None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/litestar_events/codec.html#Message"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#litestar_events.codec.Message" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>One event as it crosses the broker.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.15)"><em>Any</em></a><em>, </em><em>...</em><em>]</em>)</p></li>
+<li><p><strong>kwargs</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><em>dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.15)"><em>Any</em></a><em>]</em>)</p></li>
+<li><p><strong>headers</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><em>dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>]</em>)</p></li>
+<li><p><strong>correlation_id</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em> | </em><em>None</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="litestar_events.codec.listener_name">
+<span class="sig-prename descclassname"><span class="pre">litestar_events.codec.</span></span><span class="sig-name descname"><span class="pre">listener_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fn</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/litestar_events/codec.html#listener_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#litestar_events.codec.listener_name" title="Link to this definition">#</a></dt>
+<dd><p>Name of the user’s function behind a listener’s <code class="docutils literal notranslate"><span class="pre">fn</span></code>, for messages.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>fn</strong> (<em>Callable</em><em>[</em><em>...</em><em>, </em><em>Any</em><em>]</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<p id="module-litestar_events.context">Event headers, correlation ids and the listener-side event context.</p>
+<p>Every event carries a correlation id and optional string headers across the
+broker. Set them for the events emitted in a block with <a class="reference internal" href="#litestar_events.context.event_headers" title="litestar_events.context.event_headers"><code class="xref py py-func docutils literal notranslate"><span class="pre">event_headers()</span></code></a>;
+read them in a listener by annotating a parameter as <a class="reference internal" href="#litestar_events.context.EventContext" title="litestar_events.context.EventContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">EventContext</span></code></a> or by
+calling <a class="reference internal" href="#litestar_events.context.current_event" title="litestar_events.context.current_event"><code class="xref py py-func docutils literal notranslate"><span class="pre">current_event()</span></code></a>. Events emitted from inside a listener inherit its
+correlation id, so one request can be traced across processes.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="litestar_events.context.EventContext">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">litestar_events.context.</span></span><span class="sig-name descname"><span class="pre">EventContext</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">headers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">correlation_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/litestar_events/context.html#EventContext"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#litestar_events.context.EventContext" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>What a listener can know about the event it is handling.</p>
+<p>Annotate a listener parameter with this type and it is injected:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="nd">@listener</span><span class="p">(</span><span class="s2">"order_created"</span><span class="p">)</span>
+</span><span data-line="2"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">on_order</span><span class="p">(</span><span class="n">order_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">ctx</span><span class="p">:</span> <span class="n">EventContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+</span></pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>event_id</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>)</p></li>
+<li><p><strong>headers</strong> (<em>Mapping</em><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>]</em>)</p></li>
+<li><p><strong>correlation_id</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em> | </em><em>None</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="litestar_events.context.current_event">
+<span class="sig-prename descclassname"><span class="pre">litestar_events.context.</span></span><span class="sig-name descname"><span class="pre">current_event</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/litestar_events/context.html#current_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#litestar_events.context.current_event" title="Link to this definition">#</a></dt>
+<dd><p>Return the event the running listener is handling, else <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#litestar_events.context.EventContext" title="litestar_events.context.EventContext"><em>EventContext</em></a> | None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="litestar_events.context.event_headers">
+<span class="sig-prename descclassname"><span class="pre">litestar_events.context.</span></span><span class="sig-name descname"><span class="pre">event_headers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">headers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">correlation_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">extra</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/litestar_events/context.html#event_headers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#litestar_events.context.event_headers" title="Link to this definition">#</a></dt>
+<dd><p>Attach headers (and optionally a correlation id) to events emitted inside.</p>
+<p>Nested blocks merge, inner values winning. Header names and values are
+strings. Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">with</span> <span class="n">event_headers</span><span class="p">(</span><span class="n">tenant</span><span class="o">=</span><span class="s2">"acme"</span><span class="p">,</span> <span class="n">correlation_id</span><span class="o">=</span><span class="n">request_id</span><span class="p">):</span>
+</span><span data-line="2">    <span class="n">app</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="s2">"order_created"</span><span class="p">,</span> <span class="n">order_id</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#TypeError" title="(in Python v3.15)"><strong>TypeError</strong></a> – if a header name or value is not a string.</p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>headers</strong> (<em>Mapping</em><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>] </em><em>| </em><em>None</em>)</p></li>
+<li><p><strong>correlation_id</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>extra</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Generator[None, None, None]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="litestar_events.context.new_correlation_id">
+<span class="sig-prename descclassname"><span class="pre">litestar_events.context.</span></span><span class="sig-name descname"><span class="pre">new_correlation_id</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/litestar_events/context.html#new_correlation_id"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#litestar_events.context.new_correlation_id" title="Link to this definition">#</a></dt>
+<dd><p>Return a fresh correlation id.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="litestar_events.context.outgoing_correlation_id">
+<span class="sig-prename descclassname"><span class="pre">litestar_events.context.</span></span><span class="sig-name descname"><span class="pre">outgoing_correlation_id</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/litestar_events/context.html#outgoing_correlation_id"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#litestar_events.context.outgoing_correlation_id" title="Link to this definition">#</a></dt>
+<dd><p>Correlation id for an event emitted now.</p>
+<p>The explicit one from <a class="reference internal" href="#litestar_events.context.event_headers" title="litestar_events.context.event_headers"><code class="xref py py-func docutils literal notranslate"><span class="pre">event_headers()</span></code></a>, else the one of the event the
+current listener handles, else a new id.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="litestar_events.context.outgoing_headers">
+<span class="sig-prename descclassname"><span class="pre">litestar_events.context.</span></span><span class="sig-name descname"><span class="pre">outgoing_headers</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/litestar_events/context.html#outgoing_headers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#litestar_events.context.outgoing_headers" title="Link to this definition">#</a></dt>
+<dd><p>Headers to stamp on an event emitted now.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)">dict</a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)">str</a>, <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)">str</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="litestar_events.context.use_event">
+<span class="sig-prename descclassname"><span class="pre">litestar_events.context.</span></span><span class="sig-name descname"><span class="pre">use_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/litestar_events/context.html#use_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#litestar_events.context.use_event" title="Link to this definition">#</a></dt>
+<dd><p>Make <code class="docutils literal notranslate"><span class="pre">context</span></code> the current event; used while a listener runs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>context</strong> (<a class="reference internal" href="#litestar_events.context.EventContext" title="litestar_events.context.EventContext"><em>EventContext</em></a>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Generator[None, None, None]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<p id="module-litestar_events.middleware">ASGI middleware tying a request id to the events emitted while serving it.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="litestar_events.middleware.RequestIdMiddleware">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">litestar_events.middleware.</span></span><span class="sig-name descname"><span class="pre">RequestIdMiddleware</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">header</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'x-request-id'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">echo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude_path_pattern</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/litestar_events/middleware.html#RequestIdMiddleware"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#litestar_events.middleware.RequestIdMiddleware" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ASGIMiddleware</span></code></p>
+<p>Use the request’s id as the correlation id of events emitted during it.</p>
+<p>The id is read from <code class="docutils literal notranslate"><span class="pre">header</span></code> (<code class="docutils literal notranslate"><span class="pre">x-request-id</span></code> by default). A missing or
+unsafe value is replaced with a generated one. Events emitted while the
+request is handled carry the id, so a worker’s logs can be tied back to the
+request. With <code class="docutils literal notranslate"><span class="pre">echo</span></code> the id is also set on the response.</p>
+<p>Routes can opt out with <code class="docutils literal notranslate"><span class="pre">opt={&quot;exclude_request_id&quot;:</span> <span class="pre">True}</span></code> or by path
+through <code class="docutils literal notranslate"><span class="pre">exclude_path_pattern</span></code>.</p>
+<p>Add it through <code class="docutils literal notranslate"><span class="pre">EventsConfig(request_id_header=...)</span></code>, or register it
+yourself as ordinary Litestar middleware.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>header</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>)</p></li>
+<li><p><strong>echo</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>)</p></li>
+<li><p><strong>exclude_path_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em> | </em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>, </em><em>...</em><em>] </em><em>| </em><em>None</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="litestar_events.middleware.RequestIdMiddleware.handle">
+<em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">handle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scope</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">receive</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">send</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">next_app</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/litestar_events/middleware.html#RequestIdMiddleware.handle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#litestar_events.middleware.RequestIdMiddleware.handle" title="Link to this definition">#</a></dt>
+<dd><p>Handle ASGI call.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><span class="target" id="litestar_events.middleware.RequestIdMiddleware.handle.params.scope"></span><strong>scope</strong><a class="paramlink headerlink reference internal" href="#litestar_events.middleware.RequestIdMiddleware.handle.params.scope">¶</a> – The ASGI connection scope.</p></li>
+<li><p><span class="target" id="litestar_events.middleware.RequestIdMiddleware.handle.params.receive"></span><strong>receive</strong><a class="paramlink headerlink reference internal" href="#litestar_events.middleware.RequestIdMiddleware.handle.params.receive">¶</a> – The ASGI receive function.</p></li>
+<li><p><span class="target" id="litestar_events.middleware.RequestIdMiddleware.handle.params.send"></span><strong>send</strong><a class="paramlink headerlink reference internal" href="#litestar_events.middleware.RequestIdMiddleware.handle.params.send">¶</a> – The ASGI send function</p></li>
+<li><p><span class="target" id="litestar_events.middleware.RequestIdMiddleware.handle.params.next_app"></span><strong>next_app</strong><a class="paramlink headerlink reference internal" href="#litestar_events.middleware.RequestIdMiddleware.handle.params.next_app">¶</a> – The next ASGI application in the middleware stack to call</p></li>
+<li><p><strong>scope</strong> (<em>Scope</em>)</p></li>
+<li><p><strong>receive</strong> (<em>Receive</em>)</p></li>
+<li><p><strong>send</strong> (<em>Send</em>)</p></li>
+<li><p><strong>next_app</strong> (<em>ASGIApp</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="backends-litestar-events-contrib">
+<h2>Backends (<code class="docutils literal notranslate"><span class="pre">litestar_events.contrib</span></code>)<a class="headerlink" href="#backends-litestar-events-contrib" title="Link to this heading">#</a></h2>
+<p>Drop-in <code class="docutils literal notranslate"><span class="pre">BaseEventEmitterBackend</span></code> implementations, one subpackage per
+transport. See each backend’s docstring for its delivery semantics and
+constructor arguments.</p>
+<span class="target" id="module-litestar_events.contrib"></span></section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="producer_worker.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title">Producer and worker processes</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="maintaining/setup.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title">Repository setup</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright"><p>2026, Hasan Sezer Taşan</p>
+  
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> and
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+  <a href="https://github.com/hasansezertasan/litestar_events" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div>
+    </div>
+  </div>
+</footer>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="_static/copybutton.js?v=f281be69"></script>
+      <script>let toggleHintShow = 'Click to show';</script>
+      <script>let toggleHintHide = 'Click to hide';</script>
+      <script>let toggleOpenOnPrint = 'true';</script>
+      <script src="_static/togglebutton.js?v=b8b12719"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+      <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+      <script src="_static/shibuya.js?v=50760d75"></script>
+      <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script></body>
+</html>

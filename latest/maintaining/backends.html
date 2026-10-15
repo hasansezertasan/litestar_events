@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="amber" data-content_root="../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Backend design rules - litestar_events</title><link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="prev" title="Repository setup" href="setup.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css?v=9c3e77be" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_paramlinks.css" />
+    <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/><meta property="og:title" content="Backend design rules"/>
+    <meta name="twitter:card" content="summary"/>
+  </head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../index.html">
+      
+      
+      <strong>litestar_events</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="nav-versions">
+    <button type="button" aria-label="Versions">
+      <span class="md:hidden">Versions</span>
+      <span class="hidden md:inline">0.1</span>
+      <i class="i-lucide chevron-down"></i>
+    </button>
+    <div class="nav-versions-choices"><ul><li><a href="/litestar_events/latest/">latest</a></li><li><a href="/litestar_events/0.1/">0.1</a></li></ul></div>
+  </div><div class="sy-head-socials">
+  <a href="https://github.com/hasansezertasan/litestar_events" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6">
+        <div class="globaltoc" data-expand-depth="0"><p class="caption" role="heading" aria-level="3"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../producer_worker.html">Producer and worker processes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">Modules</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Maintainer guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="setup.html">Repository setup</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Backend design rules</a></li>
+</ul>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#what-litestar-expects">What Litestar expects</a></li>
+<li><a class="reference internal" href="#one-queue-for-all-events-or-one-per-event-type">One queue for all events, or one per event type?</a><ul>
+<li><a class="reference internal" href="#how-separate-queues-would-work">How separate queues would work</a></li>
+<li><a class="reference internal" href="#why-it-is-not-the-default">Why it is not the default</a></li>
+<li><a class="reference internal" href="#when-separate-queues-are-right">When separate queues are right</a></li>
+<li><a class="reference internal" href="#consequences-of-the-single-queue">Consequences of the single queue</a></li>
+</ul>
+</li>
+</ul>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name">litestar_events</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">Backend design rules</strong>
+        <meta itemprop="position" content="2" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <article class="yue" role="main">
+          <section id="backend-design-rules">
+<h1>Backend design rules<a class="headerlink" href="#backend-design-rules" title="Link to this heading">#</a></h1>
+<p>Rules for adding or changing an emitter in <code class="docutils literal notranslate"><span class="pre">contrib/&lt;backend&gt;/</span></code>.</p>
+<section id="what-litestar-expects">
+<h2>What Litestar expects<a class="headerlink" href="#what-litestar-expects" title="Link to this heading">#</a></h2>
+<p>Litestar’s own <code class="docutils literal notranslate"><span class="pre">SimpleEventEmitter</span></code> uses a single in-process stream for every
+event. <code class="docutils literal notranslate"><span class="pre">emit(event_id,</span> <span class="pre">...)</span></code> looks up the listeners registered for that id and
+puts one work item per listener on that stream. There is no queue per event type:
+the event id is a lookup key, not a channel. A listener may subscribe to several
+event ids, and one event id may have several listeners.</p>
+<p>A distributed backend keeps that contract. Whatever the transport, one consumer
+receives an event and runs <strong>every</strong> listener registered for its event id in that
+process, isolating failures per listener. So the question below is only about
+transport topology; it never changes listener semantics.</p>
+</section>
+<section id="one-queue-for-all-events-or-one-per-event-type">
+<h2>One queue for all events, or one per event type?<a class="headerlink" href="#one-queue-for-all-events-or-one-per-event-type" title="Link to this heading">#</a></h2>
+<p>Both are workable. The rule is: route by event id <em>inside</em> one consumer, and do
+not create a queue per event type. The rest of this section explains why, and what
+the alternative would look like.</p>
+<p>Map the event id onto the broker’s own routing primitive when it has one:</p>
+<div class="table-wrapper docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Backend</p></th>
+<th class="head"><p>Event id becomes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>RabbitMQ</p></td>
+<td><p>A routing key on one topic exchange. One consumer queue is bound once per
+event id.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Kafka, Confluent</p></td>
+<td><p>A topic (<code class="docutils literal notranslate"><span class="pre">topic_prefix</span></code> + event id).</p></td>
+</tr>
+<tr class="row-even"><td><p>NATS</p></td>
+<td><p>A subject.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Redis</p></td>
+<td><p>A pub/sub channel.</p></td>
+</tr>
+<tr class="row-even"><td><p>MQTT</p></td>
+<td><p>A topic.</p></td>
+</tr>
+<tr class="row-odd"><td><p>ZeroMQ</p></td>
+<td><p>The subscription topic, sent as the first message frame.</p></td>
+</tr>
+<tr class="row-even"><td><p>Postgres</p></td>
+<td><p>A <code class="docutils literal notranslate"><span class="pre">LISTEN</span></code> channel.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>A managed queue has no such primitive, and creating one queue per event id would
+mean provisioning, permissions and cost that grow with the number of events.
+For those backends, use <strong>a single managed queue for all events</strong>, and carry the
+originating event id in a message attribute. SQS (one queue) and Pub/Sub (one
+topic) are the precedents: every event shares it, and the consumer reads the
+<code class="docutils literal notranslate"><span class="pre">event_id</span></code> attribute to pick the listeners. Follow it for any future
+queue-style backend, such as Azure Service Bus.</p>
+<p>Deliberate consequences:</p>
+<ul class="simple">
+<li><p>Several instances that share one queue are competing consumers, so each event
+is handled once (work-queue semantics). Broadcast fanout needs a fan-out layer
+in front of the queues (for example SNS in front of SQS), which the SQS
+backend does not provide itself. Pub/Sub gives it natively, with one
+subscription per instance.</p></li>
+<li><p>The message body is the same envelope for every backend, so the event id is
+<em>not</em> part of it. A backend that cannot carry the id as metadata is not a fit
+for the single-queue rule.</p></li>
+</ul>
+<section id="how-separate-queues-would-work">
+<h3>How separate queues would work<a class="headerlink" href="#how-separate-queues-would-work" title="Link to this heading">#</a></h3>
+<p>A queue per event type (for example RabbitMQ with <code class="docutils literal notranslate"><span class="pre">queue_name</span></code> set to the event
+id, or one SQS queue per event) would work like this:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">emit(&quot;order_created&quot;)</span></code> publishes to the queue named for that event.</p></li>
+<li><p>A worker declares one queue per event id it has listeners for, and runs one
+consumer on each.</p></li>
+<li><p>Each event type is then its own work queue, with its own depth, retention,
+dead-letter queue, rate limit and access policy.</p></li>
+</ul>
+<p>That buys real things: an event that is slow or failing cannot delay others
+(no head-of-line blocking), each event type can be scaled and monitored on its
+own, and permissions can differ per event.</p>
+</section>
+<section id="why-it-is-not-the-default">
+<h3>Why it is not the default<a class="headerlink" href="#why-it-is-not-the-default" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong>Topology grows with the code.</strong> Every new event id needs a queue created,
+permissioned and monitored. Managed queues (SQS, Service Bus) charge and limit
+per queue. On RabbitMQ and Kafka it is cheap, which is why those backends
+already give each event id its own routing key or topic, and still use one
+consumer.</p></li>
+<li><p><strong>A worker must know every event id up front</strong> to declare its queues. With one
+queue, adding a listener needs no new infrastructure.</p></li>
+<li><p><strong>It does not match Litestar’s model.</strong> Listeners are keyed by event id in one
+emitter, so one process consuming everything is the natural shape.</p></li>
+<li><p><strong>It is not needed for isolation in the common case.</strong> A failing listener is
+already caught per listener, so it cannot block its siblings.</p></li>
+</ul>
+</section>
+<section id="when-separate-queues-are-right">
+<h3>When separate queues are right<a class="headerlink" href="#when-separate-queues-are-right" title="Link to this heading">#</a></h3>
+<p>Give an event type its own queue when it has a different load or reliability
+profile from the rest: a slow batch event next to latency-sensitive ones, an
+event that needs its own dead-letter queue or retention, or one that only a
+dedicated worker pool may consume. Do this by running a separate emitter
+(its own <code class="docutils literal notranslate"><span class="pre">queue_name</span></code> or <code class="docutils literal notranslate"><span class="pre">queue_url</span></code>, and its own listeners) for that event,
+not by changing a backend to create queues per event.</p>
+</section>
+<section id="consequences-of-the-single-queue">
+<h3>Consequences of the single queue<a class="headerlink" href="#consequences-of-the-single-queue" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong>An instance without a listener for an event drops it.</strong> On one shared queue
+every instance can receive every event id. SQS and RabbitMQ acknowledge or
+delete a message that has no matching listener and log it, so if workers differ
+in which listeners they register, an event can be lost. Keep every worker that
+shares a queue on the same listener set, or give each distinct set its own
+queue.</p></li>
+<li><p><strong>Head-of-line blocking.</strong> A slow listener delays the events behind it in the
+same queue. Use the separate-emitter approach above when that matters.</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="setup.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title">Repository setup</div></div>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright"><p>2026, Hasan Sezer Taşan</p>
+  
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> and
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+  <a href="https://github.com/hasansezertasan/litestar_events" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=f281be69"></script>
+      <script>let toggleHintShow = 'Click to show';</script>
+      <script>let toggleHintHide = 'Click to hide';</script>
+      <script>let toggleOpenOnPrint = 'true';</script>
+      <script src="../_static/togglebutton.js?v=b8b12719"></script>
+      <script src="../_static/design-tabs.js?v=f930bc37"></script>
+      <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+      <script src="../_static/shibuya.js?v=50760d75"></script>
+      <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script></body>
+</html>

@@ -478,6 +478,9 @@ convention = "pep257"
 # backend-wide for consistency (callback-driven backends never trigger B023).
 "./src/litestar_events/contrib/**/*.py" = ["B023"]
 "examples/**/*.py" = ["INP001"]
+# Litestar exposes no public API for CLI groups, so the events command group
+# imports ``LitestarGroup`` and ``console`` from the private ``litestar.cli._utils``.
+"src/litestar_events/_cli.py" = ["PLC2701"]
 # Documentation examples are importable modules tested by
 # ``tests/test_docs_examples.py``; they are not application packages.
 "docs/examples/**/*.py" = ["INP001"]

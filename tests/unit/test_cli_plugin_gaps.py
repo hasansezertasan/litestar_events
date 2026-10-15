@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import os
 import signal
 import sys
@@ -294,3 +295,22 @@ async def test_closing_waits_for_running_local_tasks() -> None:
     emitter._local_tasks.add(task)
     await emitter._finish_local_tasks(timeout=5)
     assert done == [True]
+
+
+async def test_wait_for_signal_restores_fallback_handlers(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    loop = asyncio.get_running_loop()
+
+    def unsupported(*_: object) -> None:
+        raise NotImplementedError
+
+    monkeypatch.setattr(loop, "add_signal_handler", unsupported)
+    before = signal.getsignal(signal.SIGTERM)
+    task = asyncio.ensure_future(_cli._wait_for_signal())
+    await asyncio.sleep(0.05)
+    assert signal.getsignal(signal.SIGTERM) is not before
+    task.cancel()
+    with contextlib.suppress(asyncio.CancelledError):
+        await task
+    assert signal.getsignal(signal.SIGTERM) is before

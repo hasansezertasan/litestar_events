@@ -129,7 +129,7 @@ class ZeroMQEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         queue = require(self._publish_queue, "publish queue")
         pub = require(self._pub, "ZMQ publisher socket")
         while True:
-            event_id, body = await queue.get()
+            event_id, body, _ = await queue.get()
             try:
                 await pub.send_multipart([event_id.encode(), body])
             except Exception:

@@ -16,7 +16,7 @@ from typing import Any, cast
 
 import confluent_kafka
 import pytest
-from dirty_equals import IsStr
+from dirty_equals import IsBytes, IsStr
 from litestar.events import EventListener, listener
 
 
@@ -149,7 +149,10 @@ async def test_enter_and_exit_lifecycle(monkeypatch: pytest.MonkeyPatch) -> None
     assert producer.flushed == [5.0]
     assert consumer.closed is True
     assert emitter._publish_queue is None
-    assert producer.headers[0] == [("content-type", b"application/json")]
+    assert producer.headers[0] == [
+        ("content-type", b"application/json"),
+        ("correlation-id", IsBytes()),
+    ]
     topic, body = producer.produced[0]
     assert topic == "litestar.events.user_registered"
     assert json.loads(body) == {

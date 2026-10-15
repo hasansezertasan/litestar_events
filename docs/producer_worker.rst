@@ -137,11 +137,39 @@ format:
      - message header ``Content-Type`` (needs NATS server 2.2 or newer)
    * - SQS, Google Pub/Sub
      - message attribute ``content_type``
-   * - Redis, ZeroMQ, MQTT, PostgreSQL
-     - nowhere: these transports have no per-message metadata (MQTT 3.1.1)
+   * - Redis, ZeroMQ, PostgreSQL
+     - nowhere: these transports have no per-message metadata
+   * - MQTT
+     - the MQTT 5 ``Content Type`` property, when the emitter is created with
+       ``protocol=aiomqtt.ProtocolVersion.V5``; nowhere on 3.1.1
 
 This library does not check the value when consuming: the worker always decodes
 with its configured codec.
+
+Event headers and the correlation id are also copied into the same native
+metadata, so brokers and tools outside this library can route or trace on them.
+The envelope stays the source of truth: workers read both from it, never from
+the native copy. A user header named ``content-type`` is dropped in favour of the
+codec's.
+
+.. list-table::
+   :header-rows: 1
+
+   * - Backend
+     - Headers and correlation id
+   * - RabbitMQ
+     - AMQP ``headers``; correlation id in the ``correlation_id`` property
+   * - Kafka, Confluent, NATS
+     - record or message headers; correlation id as ``correlation-id``
+   * - Google Pub/Sub
+     - message attributes; correlation id as ``correlation-id``
+   * - SQS
+     - correlation id only, as attribute ``correlation_id`` (SQS allows 10
+       attributes per message)
+   * - MQTT
+     - MQTT 5 user properties, on v5 only
+   * - Redis, ZeroMQ, PostgreSQL
+     - nowhere
 
 Whole-body models
 ~~~~~~~~~~~~~~~~~

@@ -117,7 +117,9 @@ async def test_enter_subscribes_and_exit_drains(
     assert client.drained is True
     assert client.closed is True
     assert emitter._publish_queue is None
-    assert client.headers == [{"Content-Type": "application/json"}]
+    assert client.headers == [
+        {"Content-Type": "application/json", "correlation-id": IsStr()}
+    ]
     subject, body = client.published[0]
     assert subject == "litestar.events.user_registered"
     assert json.loads(body) == {

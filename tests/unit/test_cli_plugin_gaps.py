@@ -216,7 +216,7 @@ async def test_memory_emitter_drops_garbage_and_survives_failing_listener(
     async with emitter:
         queue = emitter._publish_queue
         assert queue is not None
-        queue.put_nowait(("ping", b"\xff not json"))
+        queue.put_nowait(("ping", b"\xff not json", {}))
         emitter.emit("ping")
         await asyncio.wait_for(ran.wait(), timeout=5)
         await asyncio.sleep(0.05)

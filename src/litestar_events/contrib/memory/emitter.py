@@ -66,7 +66,7 @@ class MemoryEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
     async def _consumer_loop(self) -> None:
         queue = require(self._publish_queue, "publish queue")
         while True:
-            event_id, body = await queue.get()
+            event_id, body, _ = await queue.get()
             try:
                 event = self._codec.decode(body)
             except Exception:

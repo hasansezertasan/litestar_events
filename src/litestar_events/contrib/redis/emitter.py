@@ -111,7 +111,7 @@ class RedisEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         queue = require(self._publish_queue, "publish queue")
         client = require(self._client, "Redis client")
         while True:
-            event_id, body = await queue.get()
+            event_id, body, _ = await queue.get()
             try:
                 await client.publish(self._channel(event_id), body)
             except Exception:

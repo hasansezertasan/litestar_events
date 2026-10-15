@@ -16,7 +16,7 @@ from typing import Any, ClassVar, cast
 
 import aiokafka
 import pytest
-from dirty_equals import IsStr
+from dirty_equals import IsBytes, IsStr
 from litestar.events import EventListener, listener
 
 
@@ -137,7 +137,7 @@ async def test_enter_starts_clients_and_exit_stops_them(
     assert _FakeConsumer.instances[0].stopped is True
     assert emitter._publish_queue is None
     assert _FakeProducer.instances[0].headers == [
-        [("content-type", b"application/json")]
+        [("content-type", b"application/json"), ("correlation-id", IsBytes())]
     ]
     topic, body = _FakeProducer.instances[0].sent[0]
     assert topic == "litestar.events.user_registered"

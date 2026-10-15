@@ -10,7 +10,12 @@ from typing import TYPE_CHECKING, Any
 from litestar.events import BaseEventEmitterBackend, EventListener
 from typing_extensions import Self
 
-from litestar_events._queue import QueuedEmitterMixin, QueuePayload, require
+from litestar_events._queue import (
+    QueuedEmitterMixin,
+    QueuePayload,
+    native_headers,
+    require,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -52,6 +57,9 @@ class MQTTEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
       - Listener exceptions are caught per-listener; siblings still complete.
       - Every connected app instance receives every event (broadcast/fanout).
         For work-queue semantics, use the rabbit backend.
+      - Content type and event headers travel as MQTT 5 properties only when
+        ``protocol`` is ``aiomqtt.ProtocolVersion.V5``; below v5 there is no
+        per-message metadata.
 
     Topic layout:
       - One MQTT topic per registered event id: ``f"{topic_prefix}{event_id}"``.
@@ -73,7 +81,7 @@ class MQTTEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
 
     durable = False
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments  # one keyword knob per MQTT feature; keyword-only past `listeners`
         self,
         listeners: Sequence[EventListener],
         *,
@@ -86,6 +94,7 @@ class MQTTEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         topic_prefix: str = "litestar/events/",
         qos: int = 0,
         client_id: str | None = None,
+        protocol: aiomqtt.ProtocolVersion | None = None,
     ) -> None:
         super().__init__(listeners)
         self._init_role(role)
@@ -97,6 +106,7 @@ class MQTTEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         self._topic_prefix = topic_prefix
         self._qos = qos
         self._client_id = client_id
+        self._protocol = protocol
 
         self._by_event: dict[str, list[EventListener]] = defaultdict(list)
         for listener in listeners:
@@ -128,6 +138,7 @@ class MQTTEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
             username=self._username,
             password=self._password,
             identifier=self._client_id,
+            protocol=self._protocol,
         )
         self._client = await self._client_cm.__aenter__()
         # Guard (not assert) the external CM contract: stripped asserts under
@@ -163,11 +174,33 @@ class MQTTEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         queue = require(self._publish_queue, "publish queue")
         client = require(self._client, "MQTT client")
         while True:
-            event_id, body = await queue.get()
+            event_id, body, meta = await queue.get()
             try:
-                await client.publish(self._topic(event_id), payload=body, qos=self._qos)
+                await client.publish(
+                    self._topic(event_id),
+                    payload=body,
+                    qos=self._qos,
+                    properties=self._properties(meta),
+                )
             except Exception:
                 logger.exception("Failed to publish event %s", event_id)
+
+    def _properties(self, meta: dict[str, str]) -> Any:
+        """MQTT 5 content type and user properties; ``None`` below v5."""
+        import aiomqtt
+        from paho.mqtt.packettypes import PacketTypes
+        from paho.mqtt.properties import Properties
+
+        if self._protocol != aiomqtt.ProtocolVersion.V5:
+            return None
+        properties = Properties(PacketTypes.PUBLISH)
+        properties.ContentType = self._codec.content_type
+        properties.UserProperty = [
+            (key, value)
+            for key, value in native_headers(meta, self._codec.content_type).items()
+            if key != "content-type"
+        ]
+        return properties
 
     async def _consumer_loop(self) -> None:
         client = require(self._client, "MQTT client")

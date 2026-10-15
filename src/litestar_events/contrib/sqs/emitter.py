@@ -9,7 +9,12 @@ from typing import TYPE_CHECKING, Any
 from litestar.events import BaseEventEmitterBackend, EventListener
 from typing_extensions import Self
 
-from litestar_events._queue import QueuedEmitterMixin, QueuePayload, require
+from litestar_events._queue import (
+    CORRELATION_HEADER,
+    QueuedEmitterMixin,
+    QueuePayload,
+    require,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -161,21 +166,32 @@ class SQSEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         client: Any = require(self._pub_client, "SQS publish client")
         queue_url = require(self._queue_url, "SQS queue URL")
         while True:
-            event_id, body = await queue.get()
+            event_id, body, meta = await queue.get()
             try:
                 await client.send_message(
                     QueueUrl=queue_url,
                     MessageBody=body.decode(),
-                    MessageAttributes={
-                        "event_id": {"DataType": "String", "StringValue": event_id},
-                        "content_type": {
-                            "DataType": "String",
-                            "StringValue": self._codec.content_type,
-                        },
-                    },
+                    MessageAttributes=self._attributes(event_id, meta),
                 )
             except Exception:
                 logger.exception("Failed to publish event %s", event_id)
+
+    def _attributes(self, event_id: str, meta: dict[str, str]) -> dict[str, Any]:
+        # SQS allows 10 message attributes, so only the correlation id travels
+        # natively; event headers stay in the body.
+        attributes: dict[str, Any] = {
+            "event_id": {"DataType": "String", "StringValue": event_id},
+            "content_type": {
+                "DataType": "String",
+                "StringValue": self._codec.content_type,
+            },
+        }
+        if CORRELATION_HEADER in meta:
+            attributes["correlation_id"] = {
+                "DataType": "String",
+                "StringValue": meta[CORRELATION_HEADER],
+            }
+        return attributes
 
     async def _consumer_loop(self) -> None:
         client: Any = require(self._sub_client, "SQS consume client")

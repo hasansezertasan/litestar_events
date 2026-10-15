@@ -9,7 +9,12 @@ from typing import TYPE_CHECKING
 from litestar.events import BaseEventEmitterBackend, EventListener
 from typing_extensions import Self
 
-from litestar_events._queue import QueuedEmitterMixin, QueuePayload, require
+from litestar_events._queue import (
+    CORRELATION_HEADER,
+    QueuedEmitterMixin,
+    QueuePayload,
+    require,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -133,13 +138,17 @@ class RabbitEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         queue = require(self._publish_queue, "publish queue")
         exchange = require(self._exchange, "RabbitMQ exchange")
         while True:
-            event_id, body = await queue.get()
+            event_id, body, meta = await queue.get()
             try:
                 await exchange.publish(
                     aio_pika.Message(
                         body=body,
                         delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
                         content_type=self._codec.content_type,
+                        headers={
+                            k: v for k, v in meta.items() if k != CORRELATION_HEADER
+                        },
+                        correlation_id=meta.get(CORRELATION_HEADER),
                     ),
                     routing_key=event_id,
                 )

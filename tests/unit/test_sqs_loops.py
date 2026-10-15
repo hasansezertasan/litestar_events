@@ -163,6 +163,7 @@ async def test_enter_resolves_and_creates_queue(
     assert sent["MessageAttributes"] == {
         "event_id": {"DataType": "String", "StringValue": "user_registered"},
         "content_type": {"DataType": "String", "StringValue": "application/json"},
+        "correlation_id": {"DataType": "String", "StringValue": IsStr()},
     }
 
 

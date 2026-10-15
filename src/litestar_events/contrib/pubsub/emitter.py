@@ -175,15 +175,18 @@ class PubSubEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         queue = require(self._publish_queue, "publish queue")
         publisher = require(self._publisher, "Pub/Sub publisher")
         while True:
-            event_id, body = await queue.get()
+            event_id, body, meta = await queue.get()
             try:
                 await publisher.publish(
                     self._topic,
                     [
                         PubsubMessage(
                             body,
-                            event_id=event_id,
-                            content_type=self._codec.content_type,
+                            **{
+                                **meta,
+                                "event_id": event_id,
+                                "content_type": self._codec.content_type,
+                            },
                         )
                     ],
                 )

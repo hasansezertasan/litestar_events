@@ -190,7 +190,7 @@ async def test_publisher_loop_logs_failure() -> None:
     pool = cast("_FakePool", emitter._pool)
     pool.conn.execute_error = RuntimeError("boom")
     emitter._publish_queue = asyncio.Queue()
-    emitter._publish_queue.put_nowait(("evt", b"{}"))
+    emitter._publish_queue.put_nowait(("evt", b"{}", {}))
 
     task = asyncio.create_task(emitter._publisher_loop())
     await asyncio.sleep(0.1)

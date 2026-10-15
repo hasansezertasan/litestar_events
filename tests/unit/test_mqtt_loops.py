@@ -15,7 +15,7 @@ from typing import Any, cast
 
 import aiomqtt
 import pytest
-from dirty_equals import IsBytes
+from dirty_equals import IsBytes, IsStr
 from litestar.events import EventListener, listener
 
 
@@ -44,12 +44,16 @@ class _FakeClient:
         self._messages = list(messages or [])
         self.subscribed: list[tuple[str, int]] = []
         self.published: list[tuple[str, str, int]] = []
+        self.properties: list[Any] = []
         self.publish_error: Exception | None = None
 
     async def subscribe(self, topic: str, qos: int = 0) -> None:
         self.subscribed.append((topic, qos))
 
-    async def publish(self, topic: str, payload: str, qos: int = 0) -> None:
+    async def publish(
+        self, topic: str, payload: str, qos: int = 0, properties: Any = None
+    ) -> None:
+        self.properties.append(properties)
         if self.publish_error is not None:
             raise self.publish_error
         self.published.append((topic, payload, qos))
@@ -124,6 +128,39 @@ async def test_enter_subscribes_and_exit_tears_down(
             1,
         )
     ]
+
+
+async def test_v5_publishes_content_type_and_headers(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from litestar_events.context import event_headers
+
+    client = _FakeClient()
+    _patch_mqtt(monkeypatch, client)
+    emitter = _emitter(protocol=aiomqtt.ProtocolVersion.V5)
+
+    async with emitter:
+        with event_headers({"tenant": "acme", "Content-Type": "text/plain"}):
+            emitter.emit("ping")
+        await asyncio.sleep(0.1)
+
+    (properties,) = client.properties
+    assert properties.ContentType == "application/json"
+    assert properties.UserProperty == [("tenant", "acme"), ("correlation-id", IsStr())]
+
+
+async def test_below_v5_publishes_no_properties(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = _FakeClient()
+    _patch_mqtt(monkeypatch, client)
+    emitter = _emitter()
+
+    async with emitter:
+        emitter.emit("ping")
+        await asyncio.sleep(0.1)
+
+    assert client.properties == [None]
 
 
 async def test_enter_rejects_invalid_topic(monkeypatch: pytest.MonkeyPatch) -> None:

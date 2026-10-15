@@ -10,7 +10,12 @@ from typing import TYPE_CHECKING
 from litestar.events import BaseEventEmitterBackend, EventListener
 from typing_extensions import Self
 
-from litestar_events._queue import QueuedEmitterMixin, QueuePayload, require
+from litestar_events._queue import (
+    QueuedEmitterMixin,
+    QueuePayload,
+    native_headers,
+    require,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Sequence
@@ -155,12 +160,14 @@ class NATSEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         queue = require(self._publish_queue, "publish queue")
         client = require(self._client, "NATS client")
         while True:
-            event_id, body = await queue.get()
+            event_id, body, meta = await queue.get()
             try:
                 await client.publish(
                     self._subject(event_id),
                     body,
-                    headers={"Content-Type": self._codec.content_type},
+                    headers=native_headers(
+                        meta, self._codec.content_type, key="Content-Type"
+                    ),
                 )
             except Exception:
                 logger.exception("Failed to publish event %s", event_id)

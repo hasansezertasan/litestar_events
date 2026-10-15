@@ -18,6 +18,7 @@ from unittest.mock import MagicMock
 import gcloud.aio.pubsub as gcloud_pubsub
 import pytest
 from aiohttp import ClientResponseError
+from dirty_equals import IsStr
 from litestar.events import EventListener, listener
 
 
@@ -154,6 +155,7 @@ async def test_enter_creates_resources_and_exit_deletes_owned_subscription(
     assert message.attributes == {
         "event_id": "user_registered",
         "content_type": "application/json",
+        "correlation-id": IsStr(),
     }
 
 

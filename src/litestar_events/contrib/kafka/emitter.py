@@ -11,7 +11,12 @@ from typing import TYPE_CHECKING
 from litestar.events import BaseEventEmitterBackend, EventListener
 from typing_extensions import Self
 
-from litestar_events._queue import QueuedEmitterMixin, QueuePayload, require
+from litestar_events._queue import (
+    QueuedEmitterMixin,
+    QueuePayload,
+    native_headers,
+    require,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -149,12 +154,17 @@ class KafkaEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         queue = require(self._publish_queue, "publish queue")
         producer = require(self._producer, "Kafka producer")
         while True:
-            event_id, body = await queue.get()
+            event_id, body, meta = await queue.get()
             try:
                 await producer.send_and_wait(
                     self._topic(event_id),
                     body,
-                    headers=[("content-type", self._codec.content_type.encode())],
+                    headers=[
+                        (key, value.encode())
+                        for key, value in native_headers(
+                            meta, self._codec.content_type
+                        ).items()
+                    ],
                 )
             except Exception:
                 logger.exception("Failed to publish event %s", event_id)

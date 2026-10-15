@@ -16,15 +16,33 @@ if TYPE_CHECKING:
 
     from litestar.events import BaseEventEmitterBackend, EventListener
 
-__all__ = ["QueuedEmitterMixin", "require"]
+__all__ = ["CORRELATION_HEADER", "QueuedEmitterMixin", "native_headers", "require"]
 
 
 _T = TypeVar("_T")
 
 logger = logging.getLogger(__name__)
 
-#: The payload buffered on a backend's publish queue: ``(event_id, encoded_body)``.
-QueuePayload: TypeAlias = tuple[str, bytes]
+#: Header carrying the correlation id in a broker's native metadata.
+CORRELATION_HEADER = "correlation-id"
+
+#: The payload buffered on a backend's publish queue:
+#: ``(event_id, encoded_body, native_metadata)``. The metadata (event headers
+#: plus the correlation id) is a copy for brokers that can carry it outside the
+#: body; consumers still read the values from the decoded envelope.
+QueuePayload: TypeAlias = tuple[str, bytes, dict[str, str]]
+
+
+def native_headers(
+    metadata: Mapping[str, str], content_type: str, *, key: str = "content-type"
+) -> dict[str, str]:
+    """Headers for a broker's native metadata, led by ``content_type`` under ``key``.
+
+    A user header named ``content-type`` (any case) is dropped: the codec's
+    content type describes the body and must not be overridden.
+    """
+    rest = {k: v for k, v in metadata.items() if k.lower() != "content-type"}
+    return {key: content_type, **rest}
 
 
 def require(value: _T | None, name: str) -> _T:
@@ -156,15 +174,17 @@ class QueuedEmitterMixin:
             raise RuntimeError(msg)
         # Encode here so an unserializable payload fails at the call site
         # instead of being dropped later in the background publisher.
+        headers = outgoing_headers()
+        correlation_id = outgoing_correlation_id()
         body = self._codec.encode(
             Message(
-                args=args,
-                kwargs=kwargs,
-                headers=outgoing_headers(),
-                correlation_id=outgoing_correlation_id(),
+                args=args, kwargs=kwargs, headers=headers, correlation_id=correlation_id
             )
         )
-        self._publish_queue.put_nowait((event_id, body))
+        metadata = {**headers}
+        if correlation_id:
+            metadata[CORRELATION_HEADER] = correlation_id
+        self._publish_queue.put_nowait((event_id, body, metadata))
         if self._role is EventsRole.PRODUCER and self._local:
             self._spawn_local(event_id, body)
 

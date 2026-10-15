@@ -152,7 +152,7 @@ class PostgresEventEmitter(QueuedEmitterMixin, BaseEventEmitterBackend):
         queue = require(self._publish_queue, "publish queue")
         pool = require(self._pool, "connection pool")
         while True:
-            event_id, body = await queue.get()
+            event_id, body, _ = await queue.get()
             try:
                 async with pool.connection() as conn:
                     await conn.execute(

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/hasansezertasan/litestar_events/compare/v0.1.0...v0.1.1) (2026-10-18)
+
+
+### 🐛 Bug Fixes
+
+* trim unrelated keywords and classifiers ([#4](https://github.com/hasansezertasan/litestar_events/issues/4)) ([3521b3b](https://github.com/hasansezertasan/litestar_events/commit/3521b3bf82a5da2c889446e11ba3e76787d889d2))
+
 ## 0.1.0 (2026-10-15)
 
 

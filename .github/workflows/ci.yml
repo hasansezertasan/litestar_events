@@ -443,11 +443,7 @@ jobs:
         run: uv run --locked pytest -vv -m integration tests/integration/test_${{ matrix.backend }}.py
   check:
     if: ${{ always() && github.event.pull_request.draft != true }}
-<<<<<<< before updating
-    needs: [changes, test-core, coverage-core, coverage-report, hooks, style, docs-doctest, integration]
-=======
-    needs: [changes, test-core, coverage-core, coverage-report, hooks, style, deps, docs-doctest]
->>>>>>> after updating
+    needs: [changes, test-core, coverage-core, coverage-report, hooks, style, deps, docs-doctest, integration]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}

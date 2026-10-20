@@ -57,7 +57,11 @@
   description: Example application changes
 - name: area:core
   color: "5319e7"
+<<<<<<< before updating
   description: Core package, backends, or unit/smoke tests
+=======
+  description: Core package, utilities, or core tests
+>>>>>>> after updating
 - name: area:docs
   color: 0075ca
   description: Documentation or project prose

@@ -46,7 +46,7 @@ jobs:
           # `core` underpins every component (deps, shared core/, package-root
           # modules, the root conftest, root-level tests), so a change here
           # forces the full fan-out — mirrors the import-linter layering
-          # (ADR-014). Each component filter watches only its own src+tests tree.
+          # Each component filter watches only its own src+tests tree.
           filters: |
             core:
               - '.github/workflows/ci.yml'
@@ -118,6 +118,33 @@ jobs:
             uv.lock
       - name: Run style and type checks
         run: uv run --locked tox run -e style
+  deps:
+    name: Check dependency hygiene
+    # Own job rather than part of `style`: it needs only the small `deps` group,
+    # and a failure here should name the dependency drift, not a lint run.
+    if: ${{ github.event.pull_request.draft != true }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version-file: .python-version
+      - name: Setup uv
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7  # v10.2.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: |
+            pyproject.toml
+            uv.lock
+      - name: Check dependency hygiene
+        run: uv run --locked tox run -e deps
   docs-doctest:
     name: Build and test documentation
     # Component test jobs override tox's default env list, so keep the docs
@@ -224,8 +251,8 @@ jobs:
         if: steps.setup-uv.outputs.cache-hit == 'true'
         run: echo "Cache was restored"
       - name: Run the tests
-        # `matrix.tox_args` selects the interpreter sweep (#159); the posargs
-        # after `--` select this component's marked tests (issue #160).
+        # `matrix.tox_args` selects the interpreter sweep; the posargs
+        # after `--` select this component's marked tests.
         # `matrix.tox_args` is a workflow-defined (trusted) context, used inline
         # like `matrix.os` in the System Info step — not untrusted GitHub context.
         run: uv run --locked tox run ${{ matrix.tox_args }}
@@ -237,7 +264,7 @@ jobs:
         # enforces the scoped `fail_under` gate. The per-cell `coverage report`
         # here stays for fast feedback but does NOT gate (`--fail-under=0`): a
         # line covered on one OS yet version/OS-gated off on another only
-        # balances in the per-component union. See ADR-028 (decomposes ADR-026).
+        # balances in the per-component union.
         run: |
           uv run coverage combine
           uv run coverage report --show-missing --fail-under=0
@@ -353,14 +380,14 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Note skipped coverage upload
         if: ${{ env.CODECOV_TOKEN_SET != 'true' && env.REPO_IS_PUBLIC != 'true' }}
-        run: echo "::notice::CODECOV_TOKEN secret is not set and this repo is private — skipping the Codecov upload. See docs/maintaining/setup.rst (Repository setup) to enable coverage reporting."
+        run: echo "::notice::CODECOV_TOKEN secret is not set and this repo is private — skipping the Codecov upload. See REPOSITORY_SETUP.rst (Repository setup) to enable coverage reporting."
       - name: Publish coverage HTML (public repos)
         # smokeshow uploads htmlcov to an ephemeral public URL and prints it — no
         # account or secret required (an optional key only raises rate limits).
         # Public repos only: a private report must not be published. Best-effort
         # and ordered LAST — a tokenless rate-limit or outage must never fail the
         # `check` gate nor block the authoritative Codecov/coverage.xml uploads
-        # above; smokeshow is a supplementary mirror, not load-bearing. See ADR-026.
+        # above; smokeshow is a supplementary mirror, not load-bearing.
         if: ${{ env.REPO_IS_PUBLIC == 'true' }}
         continue-on-error: true
         run: uv run --no-project --with smokeshow smokeshow upload htmlcov
@@ -416,7 +443,11 @@ jobs:
         run: uv run --locked pytest -vv -m integration tests/integration/test_${{ matrix.backend }}.py
   check:
     if: ${{ always() && github.event.pull_request.draft != true }}
+<<<<<<< before updating
     needs: [changes, test-core, coverage-core, coverage-report, hooks, style, docs-doctest, integration]
+=======
+    needs: [changes, test-core, coverage-core, coverage-report, hooks, style, deps, docs-doctest]
+>>>>>>> after updating
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}

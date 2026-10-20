@@ -12,6 +12,7 @@ Event Emitter Backends for Litestar.
    producer_worker
    modules
 
+<<<<<<< before updating
 .. toctree::
    :maxdepth: 2
    :caption: Maintainer guide
@@ -19,6 +20,8 @@ Event Emitter Backends for Litestar.
    maintaining/setup
    maintaining/backends
 
+=======
+>>>>>>> after updating
 Indices and tables
 ==================
 

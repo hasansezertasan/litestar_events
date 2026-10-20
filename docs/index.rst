@@ -16,7 +16,6 @@ Event Emitter Backends for Litestar.
    :maxdepth: 2
    :caption: Maintainer guide
 
-   maintaining/setup
    maintaining/backends
 
 Indices and tables

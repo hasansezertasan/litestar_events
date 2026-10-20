@@ -85,7 +85,7 @@ html_theme_options = {
     "github_url": "https://github.com/hasansezertasan/litestar_events",
 }
 
-# -- Versioned docs switcher (ADR-027) ---------------------------------------
+# -- Versioned docs switcher ---------------------------------------------------
 # tools/build_docs.py writes docs/_static/versions.json into each CI build from
 # the gh-pages directory listing. When present, feed the Shibuya theme's native
 # version switcher (components/nav-versions.html) via html_context. Absent (e.g.

@@ -372,6 +372,10 @@ known_first_party = ["litestar_events"]
 # tools/build_docs.py imports `packaging`, pinned in the `docs` group for that
 # script alone, so deptry reads it as a misplaced dev dependency.
 DEP004 = ["packaging"]
+# Imported directly but only importable through a declared package: click,
+# msgspec and typing_extensions come with litestar; paho with aiomqtt,
+# psycopg_pool with psycopg[pool], aiohttp with gcloud-aio-pubsub.
+DEP003 = ["aiohttp", "click", "msgspec", "paho", "psycopg_pool", "typing_extensions"]
 
 
 [tool.slotscheck]

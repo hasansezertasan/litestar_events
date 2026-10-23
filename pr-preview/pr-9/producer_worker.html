@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="amber" data-content_root="./">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Producer and worker processes - litestar_events</title><link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Modules" href="modules.html" /><link rel="prev" title="Usage" href="usage.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/togglebutton.css?v=9c3e77be" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx_paramlinks.css" />
+    <link media="print" rel="stylesheet" type="text/css" href="_static/print.css?v=20ff2c19" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/><meta property="og:title" content="Producer and worker processes"/>
+    <meta name="twitter:card" content="summary"/>
+  </head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="index.html">
+      
+      
+      <strong>litestar_events</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="sy-head-socials">
+  <a href="https://github.com/hasansezertasan/litestar_events" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6">
+        <div class="globaltoc" data-expand-depth="0"><p class="caption" role="heading" aria-level="3"><span class="caption-text">Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Producer and worker processes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Maintainer guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="maintaining/backends.html">Backend design rules</a></li>
+</ul>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#roles">Roles</a></li>
+<li><a class="reference internal" href="#example">Example</a></li>
+<li><a class="reference internal" href="#running-some-listeners-in-the-web-process">Running some listeners in the web process</a></li>
+<li><a class="reference internal" href="#the-litestar-events-commands">The <code class="docutils literal notranslate"><span class="pre">litestar</span> <span class="pre">events</span></code> commands</a></li>
+<li><a class="reference internal" href="#wire-format-and-typed-listeners">Wire format and typed listeners</a><ul>
+<li><a class="reference internal" href="#whole-body-models">Whole-body models</a></li>
+<li><a class="reference internal" href="#headers-and-correlation-ids">Headers and correlation ids</a><ul>
+<li><a class="reference internal" href="#request-ids">Request ids</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#delivery-guarantees-by-backend">Delivery guarantees by backend</a></li>
+<li><a class="reference internal" href="#testing">Testing</a></li>
+</ul>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="index.html"><span itemprop="name">litestar_events</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">Producer and worker processes</strong>
+        <meta itemprop="position" content="2" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <article class="yue" role="main">
+          <section id="producer-and-worker-processes">
+<h1>Producer and worker processes<a class="headerlink" href="#producer-and-worker-processes" title="Link to this heading">#</a></h1>
+<p>By default an emitter publishes <strong>and</strong> consumes in the same process, so every
+web instance runs every listener. To run listeners in a separate process, give
+each process a <em>role</em>.</p>
+<section id="roles">
+<h2>Roles<a class="headerlink" href="#roles" title="Link to this heading">#</a></h2>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">embedded</span></code></dt><dd><p>Publish and consume in this process. The default; existing apps keep
+working unchanged.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">producer</span></code></dt><dd><p>Publish only. No broker subscription is made and no consumer task starts.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">worker</span></code></dt><dd><p>Consume only. Listeners run here and <code class="docutils literal notranslate"><span class="pre">app.emit()</span></code> raises <code class="docutils literal notranslate"><span class="pre">RuntimeError</span></code>.</p>
+</dd>
+</dl>
+<p>The role is set explicitly with <code class="docutils literal notranslate"><span class="pre">EventsConfig.role</span></code> (or a backend’s <code class="docutils literal notranslate"><span class="pre">role=</span></code>
+argument) and defaults to <code class="docutils literal notranslate"><span class="pre">embedded</span></code>. The library reads no environment
+variables; if you want to choose the role per deployment, read your own
+setting and pass it in. <code class="docutils literal notranslate"><span class="pre">litestar</span> <span class="pre">events</span> <span class="pre">run</span></code> and <code class="docutils literal notranslate"><span class="pre">drain</span></code> always use
+<code class="docutils literal notranslate"><span class="pre">worker</span></code>, so one image serves both processes: the web app is configured as
+<code class="docutils literal notranslate"><span class="pre">producer</span></code> and the worker command overrides it.</p>
+</section>
+<section id="example">
+<h2>Example<a class="headerlink" href="#example" title="Link to this heading">#</a></h2>
+<p>Keep Litestar’s own <code class="docutils literal notranslate"><span class="pre">&#64;listener</span></code> and <code class="docutils literal notranslate"><span class="pre">app.emit()</span></code>. Both processes load the
+same app:</p>
+<div class="literal-block-wrapper docutils container" id="id1">
+<div class="code-block-caption"><span class="caption-text">examples/producer_worker/app.py</span><a class="headerlink" href="#id1" title="Link to this code">#</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="sd">"""One Litestar app, two processes: a web producer and an event worker.</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="sd">Both processes import this module. The app is configured as a producer, and</span>
+</span><span data-line="4"><span class="sd">``litestar events run`` always starts the same app as a worker, so one image</span>
+</span><span data-line="5"><span class="sd">serves both.</span>
+</span><span data-line="6">
+</span><span data-line="7"><span class="sd">    # RabbitMQ</span>
+</span><span data-line="8"><span class="sd">    docker run --rm -p 5672:5672 rabbitmq:3</span>
+</span><span data-line="9">
+</span><span data-line="10"><span class="sd">    # Web process: publishes only, consumes nothing</span>
+</span><span data-line="11"><span class="sd">    uv run litestar --app examples.producer_worker.app:app run</span>
+</span><span data-line="12">
+</span><span data-line="13"><span class="sd">    # Worker process: consumes only</span>
+</span><span data-line="14"><span class="sd">    uv run litestar --app examples.producer_worker.app:app events run</span>
+</span><span data-line="15">
+</span><span data-line="16"><span class="sd">    curl -X POST http://localhost:8000/orders</span>
+</span><span data-line="17"><span class="sd">"""</span>
+</span><span data-line="18">
+</span><span data-line="19"><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+</span><span data-line="20">
+</span><span data-line="21"><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+</span><span data-line="22">
+</span><span data-line="23"><span class="kn">from</span><span class="w"> </span><span class="nn">litestar</span><span class="w"> </span><span class="kn">import</span> <span class="n">Litestar</span><span class="p">,</span> <span class="n">Request</span><span class="p">,</span> <span class="n">post</span>
+</span><span data-line="24"><span class="kn">from</span><span class="w"> </span><span class="nn">litestar.events</span><span class="w"> </span><span class="kn">import</span> <span class="n">listener</span>
+</span><span data-line="25">
+</span><span data-line="26"><span class="kn">from</span><span class="w"> </span><span class="nn">litestar_events.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">EventsConfig</span>
+</span><span data-line="27"><span class="kn">from</span><span class="w"> </span><span class="nn">litestar_events.context</span><span class="w"> </span><span class="kn">import</span> <span class="n">EventContext</span><span class="p">,</span> <span class="n">event_headers</span>
+</span><span data-line="28"><span class="kn">from</span><span class="w"> </span><span class="nn">litestar_events.contrib.rabbit</span><span class="w"> </span><span class="kn">import</span> <span class="n">RabbitEventEmitter</span>
+</span><span data-line="29"><span class="kn">from</span><span class="w"> </span><span class="nn">litestar_events.plugin</span><span class="w"> </span><span class="kn">import</span> <span class="n">EventsPlugin</span>
+</span><span data-line="30">
+</span><span data-line="31"><span class="n">ORDER_CREATED</span> <span class="o">=</span> <span class="s2">"order_created"</span>
+</span><span data-line="32">
+</span><span data-line="33">
+</span><span data-line="34"><span class="nd">@listener</span><span class="p">(</span><span class="n">ORDER_CREATED</span><span class="p">)</span>
+</span><span data-line="35"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">send_receipt</span><span class="p">(</span><span class="n">order_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">ctx</span><span class="p">:</span> <span class="n">EventContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="36">    <span class="nb">print</span><span class="p">(</span>
+</span><span data-line="37">        <span class="sa">f</span><span class="s2">"[worker] receipt for order </span><span class="si">{</span><span class="n">order_id</span><span class="si">}</span><span class="s2"> "</span>
+</span><span data-line="38">        <span class="sa">f</span><span class="s2">"(correlation </span><span class="si">{</span><span class="n">ctx</span><span class="o">.</span><span class="n">correlation_id</span><span class="si">}</span><span class="s2">, tenant </span><span class="si">{</span><span class="n">ctx</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'tenant'</span><span class="p">)</span><span class="si">}</span><span class="s2">)"</span>
+</span><span data-line="39">    <span class="p">)</span>
+</span><span data-line="40">
+</span><span data-line="41">
+</span><span data-line="42"><span class="nd">@listener</span><span class="p">(</span><span class="n">ORDER_CREATED</span><span class="p">)</span>
+</span><span data-line="43"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">log_in_web_process</span><span class="p">(</span><span class="n">order_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="44">    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"[web] order </span><span class="si">{</span><span class="n">order_id</span><span class="si">}</span><span class="s2"> created"</span><span class="p">)</span>
+</span><span data-line="45">
+</span><span data-line="46">
+</span><span data-line="47"><span class="nd">@post</span><span class="p">(</span><span class="s2">"/orders"</span><span class="p">)</span>
+</span><span data-line="48"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">create_order</span><span class="p">(</span><span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+</span><span data-line="49">    <span class="c1"># Headers and the correlation id travel with the event to the worker.</span>
+</span><span data-line="50">    <span class="c1"># The correlation id is the request's ``x-request-id`` (see the config below).</span>
+</span><span data-line="51">    <span class="k">with</span> <span class="n">event_headers</span><span class="p">(</span><span class="n">tenant</span><span class="o">=</span><span class="s2">"acme"</span><span class="p">):</span>
+</span><span data-line="52">        <span class="n">request</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">ORDER_CREATED</span><span class="p">,</span> <span class="n">order_id</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+</span><span data-line="53">    <span class="k">return</span> <span class="p">{</span><span class="s2">"order_id"</span><span class="p">:</span> <span class="mi">42</span><span class="p">}</span>
+</span><span data-line="54">
+</span><span data-line="55">
+</span><span data-line="56"><span class="n">app</span> <span class="o">=</span> <span class="n">Litestar</span><span class="p">(</span>
+</span><span data-line="57">    <span class="n">route_handlers</span><span class="o">=</span><span class="p">[</span><span class="n">create_order</span><span class="p">],</span>
+</span><span data-line="58">    <span class="n">listeners</span><span class="o">=</span><span class="p">[</span><span class="n">send_receipt</span><span class="p">,</span> <span class="n">log_in_web_process</span><span class="p">],</span>
+</span><span data-line="59">    <span class="n">plugins</span><span class="o">=</span><span class="p">[</span>
+</span><span data-line="60">        <span class="n">EventsPlugin</span><span class="p">(</span>
+</span><span data-line="61">            <span class="n">EventsConfig</span><span class="p">(</span>
+</span><span data-line="62">                <span class="n">backend</span><span class="o">=</span><span class="n">RabbitEventEmitter</span><span class="p">,</span>
+</span><span data-line="63">                <span class="n">role</span><span class="o">=</span><span class="s2">"producer"</span><span class="p">,</span>
+</span><span data-line="64">                <span class="c1"># Events emitted while serving a request carry its id.</span>
+</span><span data-line="65">                <span class="n">request_id_header</span><span class="o">=</span><span class="s2">"x-request-id"</span><span class="p">,</span>
+</span><span data-line="66">                <span class="c1"># Runs in the web process; send_receipt runs on the worker.</span>
+</span><span data-line="67">                <span class="n">local_listeners</span><span class="o">=</span><span class="p">[</span><span class="n">log_in_web_process</span><span class="p">],</span>
+</span><span data-line="68">                <span class="c1"># A named queue is durable: events survive a worker restart.</span>
+</span><span data-line="69">                <span class="n">backend_options</span><span class="o">=</span><span class="p">{</span><span class="s2">"queue_name"</span><span class="p">:</span> <span class="s2">"orders-worker"</span><span class="p">},</span>
+</span><span data-line="70">            <span class="p">)</span>
+</span><span data-line="71">        <span class="p">)</span>
+</span><span data-line="72">    <span class="p">],</span>
+</span><span data-line="73"><span class="p">)</span>
+</span></pre></div>
+</div>
+</div>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">$ </span>litestar<span class="w"> </span>--app<span class="w"> </span>app:app<span class="w"> </span>events<span class="w"> </span>run<span class="w">                              </span><span class="c1"># worker</span>
+</span><span data-line="2"><span class="gp">$ </span>litestar<span class="w"> </span>--app<span class="w"> </span>app:app<span class="w"> </span>run<span class="w">                                     </span><span class="c1"># web (producer)</span>
+</span></pre></div>
+</div>
+</section>
+<section id="running-some-listeners-in-the-web-process">
+<h2>Running some listeners in the web process<a class="headerlink" href="#running-some-listeners-in-the-web-process" title="Link to this heading">#</a></h2>
+<p>Listeners are placed per process by default, but you can keep chosen ones in
+the web process with <code class="docutils literal notranslate"><span class="pre">EventsConfig.local_listeners</span></code>. Pass the listener
+objects themselves (what <code class="docutils literal notranslate"><span class="pre">&#64;listener</span></code> returns); each must also be in the
+app’s <code class="docutils literal notranslate"><span class="pre">listeners</span></code>, otherwise startup fails.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">EventsConfig</span><span class="p">(</span>
+</span><span data-line="2">    <span class="n">backend</span><span class="o">=</span><span class="n">RabbitEventEmitter</span><span class="p">,</span>
+</span><span data-line="3">    <span class="n">role</span><span class="o">=</span><span class="s2">"producer"</span><span class="p">,</span>
+</span><span data-line="4">    <span class="n">local_listeners</span><span class="o">=</span><span class="p">[</span><span class="n">update_cache</span><span class="p">],</span>  <span class="c1"># the rest run on the worker</span>
+</span><span data-line="5"><span class="p">)</span>
+</span></pre></div>
+</div>
+<ul class="simple">
+<li><p>A <code class="docutils literal notranslate"><span class="pre">producer</span></code> calls local listeners directly from <code class="docutils literal notranslate"><span class="pre">app.emit()</span></code>, in the
+emitting instance only, without the broker. They run as background tasks;
+a failure is logged and never raised into the request.</p></li>
+<li><p>A <code class="docutils literal notranslate"><span class="pre">worker</span></code> skips them, and does not subscribe to events that only local
+listeners handle.</p></li>
+<li><p>An <code class="docutils literal notranslate"><span class="pre">embedded</span></code> emitter ignores the setting and runs every listener.</p></li>
+<li><p>Local listeners see the same values a worker would: the event is encoded and
+decoded first, so <code class="docutils literal notranslate"><span class="pre">typed_decoding</span></code> applies to them too.</p></li>
+</ul>
+</section>
+<section id="the-litestar-events-commands">
+<h2>The <code class="docutils literal notranslate"><span class="pre">litestar</span> <span class="pre">events</span></code> commands<a class="headerlink" href="#the-litestar-events-commands" title="Link to this heading">#</a></h2>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">run</span></code></dt><dd><p>Consume events until SIGINT or SIGTERM, then shut down cleanly. Forces the
+<code class="docutils literal notranslate"><span class="pre">worker</span></code> role.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">drain</span> <span class="pre">[--timeout</span> <span class="pre">SECONDS]</span></code></dt><dd><p>Consume the backlog, then exit once no event has arrived for the timeout
+(default <code class="docutils literal notranslate"><span class="pre">EventsConfig.drain_timeout</span></code>). Useful for batch or cron-style
+processing.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">status</span></code></dt><dd><p>Connect to the broker and report whether it is reachable. This connects as
+a producer, so for ZeroMQ it cannot detect a missing peer (connections are
+lazy) and may collide with a running app’s PUB port on the same host.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">info</span></code></dt><dd><p>Print the backend, role, durability and registered events.</p>
+</dd>
+</dl>
+<p><code class="docutils literal notranslate"><span class="pre">run</span></code> and <code class="docutils literal notranslate"><span class="pre">drain</span></code> refuse the in-memory emitter, which is process-local.</p>
+</section>
+<section id="wire-format-and-typed-listeners">
+<h2>Wire format and typed listeners<a class="headerlink" href="#wire-format-and-typed-listeners" title="Link to this heading">#</a></h2>
+<p>Every backend uses one codec, so the producer and the worker always agree on
+the bytes. The default <a class="reference internal" href="modules.html#litestar_events.codec.JSONCodec" title="litestar_events.codec.JSONCodec"><code class="xref py py-class docutils literal notranslate"><span class="pre">JSONCodec</span></code></a> sends
+<code class="docutils literal notranslate"><span class="pre">{&quot;v&quot;:</span> <span class="pre">1,</span> <span class="pre">&quot;args&quot;:</span> <span class="pre">[...],</span> <span class="pre">&quot;kwargs&quot;:</span> <span class="pre">{...}}</span></code>.</p>
+<p><em>Encoding happens inside</em> <code class="docutils literal notranslate"><span class="pre">app.emit()</span></code>: a payload that cannot be serialized
+raises <code class="docutils literal notranslate"><span class="pre">SerializationException</span></code> at the call site instead of being dropped
+later by a background task. <code class="docutils literal notranslate"><span class="pre">datetime</span></code>, <code class="docutils literal notranslate"><span class="pre">UUID</span></code>, <code class="docutils literal notranslate"><span class="pre">Decimal</span></code>, dataclasses
+and msgspec/Pydantic models are supported. Messages without <code class="docutils literal notranslate"><span class="pre">&quot;v&quot;</span></code> (written
+by earlier releases) are still accepted; an unknown version is rejected and
+logged.</p>
+<p>By default the worker converts each argument to the type annotated on the
+listener, as FastStream does: a <code class="docutils literal notranslate"><span class="pre">datetime</span></code> annotation receives a
+<code class="docutils literal notranslate"><span class="pre">datetime</span></code>, a dataclass, msgspec or Pydantic annotation receives the model.
+Unannotated parameters, and listeners whose annotations cannot be resolved
+(for example, names imported only under <code class="docutils literal notranslate"><span class="pre">TYPE_CHECKING</span></code>; a warning is
+logged once), receive plain JSON values. Set <code class="docutils literal notranslate"><span class="pre">typed_decoding=False</span></code> to get
+plain JSON values everywhere, as in earlier releases:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="nd">@listener</span><span class="p">(</span><span class="s2">"order_created"</span><span class="p">)</span>
+</span><span data-line="2"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">send_receipt</span><span class="p">(</span><span class="n">order</span><span class="p">:</span> <span class="n">Order</span><span class="p">,</span> <span class="n">placed</span><span class="p">:</span> <span class="n">datetime</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="n">EventsConfig</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="n">RabbitEventEmitter</span><span class="p">)</span>  <span class="c1"># typed_decoding=True is the default</span>
+</span></pre></div>
+</div>
+<p>A value that does not match its annotation fails that listener only; the
+error is logged like any other listener failure. Pass <code class="docutils literal notranslate"><span class="pre">EventsConfig(codec=...)</span></code>
+with your own object implementing <code class="docutils literal notranslate"><span class="pre">encode</span></code>, <code class="docutils literal notranslate"><span class="pre">decode</span></code>, <code class="docutils literal notranslate"><span class="pre">invoke</span></code> and a
+<code class="docutils literal notranslate"><span class="pre">content_type</span></code> string (see below) to change the format entirely (both processes must use
+the same one). The codec’s <code class="docutils literal notranslate"><span class="pre">content_type</span></code> is also set in each broker’s native
+metadata where one exists, so consumers outside this library can tell the
+format:</p>
+<div class="table-wrapper docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Backend</p></th>
+<th class="head"><p>Where <code class="docutils literal notranslate"><span class="pre">content_type</span></code> goes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>RabbitMQ</p></td>
+<td><p>the AMQP <code class="docutils literal notranslate"><span class="pre">content_type</span></code> property</p></td>
+</tr>
+<tr class="row-odd"><td><p>Kafka, Confluent</p></td>
+<td><p>record header <code class="docutils literal notranslate"><span class="pre">content-type</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>NATS</p></td>
+<td><p>message header <code class="docutils literal notranslate"><span class="pre">Content-Type</span></code> (needs NATS server 2.2 or newer)</p></td>
+</tr>
+<tr class="row-odd"><td><p>SQS, Google Pub/Sub</p></td>
+<td><p>message attribute <code class="docutils literal notranslate"><span class="pre">content_type</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Redis, ZeroMQ, PostgreSQL</p></td>
+<td><p>nowhere: these transports have no per-message metadata</p></td>
+</tr>
+<tr class="row-odd"><td><p>MQTT</p></td>
+<td><p>the MQTT 5 <code class="docutils literal notranslate"><span class="pre">Content</span> <span class="pre">Type</span></code> property, when the emitter is created with
+<code class="docutils literal notranslate"><span class="pre">protocol=aiomqtt.ProtocolVersion.V5</span></code>; nowhere on 3.1.1</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>This library does not check the value when consuming: the worker always decodes
+with its configured codec.</p>
+<p>Event headers and the correlation id are also copied into the same native
+metadata, so brokers and tools outside this library can route or trace on them.
+The envelope stays the source of truth: workers read both from it, never from
+the native copy. A user header named <code class="docutils literal notranslate"><span class="pre">content-type</span></code> is dropped in favour of the
+codec’s.</p>
+<div class="table-wrapper docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Backend</p></th>
+<th class="head"><p>Headers and correlation id</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>RabbitMQ</p></td>
+<td><p>AMQP <code class="docutils literal notranslate"><span class="pre">headers</span></code>; correlation id in the <code class="docutils literal notranslate"><span class="pre">correlation_id</span></code> property</p></td>
+</tr>
+<tr class="row-odd"><td><p>Kafka, Confluent, NATS</p></td>
+<td><p>record or message headers; correlation id as <code class="docutils literal notranslate"><span class="pre">correlation-id</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Google Pub/Sub</p></td>
+<td><p>message attributes; correlation id as <code class="docutils literal notranslate"><span class="pre">correlation-id</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>SQS</p></td>
+<td><p>correlation id only, as attribute <code class="docutils literal notranslate"><span class="pre">correlation_id</span></code> (SQS allows 10
+attributes per message)</p></td>
+</tr>
+<tr class="row-even"><td><p>MQTT</p></td>
+<td><p>MQTT 5 user properties, on v5 only</p></td>
+</tr>
+<tr class="row-odd"><td><p>Redis, ZeroMQ, PostgreSQL</p></td>
+<td><p>nowhere</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<section id="whole-body-models">
+<h3>Whole-body models<a class="headerlink" href="#whole-body-models" title="Link to this heading">#</a></h3>
+<p>A listener with one parameter annotated as a model (dataclass, msgspec
+<code class="docutils literal notranslate"><span class="pre">Struct</span></code>, Pydantic model or <code class="docutils literal notranslate"><span class="pre">TypedDict</span></code>) can receive the whole keyword
+payload:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="nd">@listener</span><span class="p">(</span><span class="s2">"order_created"</span><span class="p">)</span>
+</span><span data-line="2"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">on_order</span><span class="p">(</span><span class="n">order</span><span class="p">:</span> <span class="n">Order</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="n">app</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="s2">"order_created"</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">total</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>      <span class="c1"># builds Order(id=1, total=9)</span>
+</span><span data-line="5"><span class="n">app</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="s2">"order_created"</span><span class="p">,</span> <span class="n">Order</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">total</span><span class="o">=</span><span class="mi">9</span><span class="p">))</span>  <span class="c1"># also works</span>
+</span></pre></div>
+</div>
+<p>This applies only when the emit has keyword arguments that do not name the
+parameter, and the listener has no <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code> and no other parameters.</p>
+</section>
+<section id="headers-and-correlation-ids">
+<h3>Headers and correlation ids<a class="headerlink" href="#headers-and-correlation-ids" title="Link to this heading">#</a></h3>
+<p>Every event carries a correlation id (generated if you don’t set one) and
+optional string headers. They travel in the message envelope, so they work on
+every backend; they are <em>not</em> native broker headers.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">litestar_events.context</span><span class="w"> </span><span class="kn">import</span> <span class="n">EventContext</span><span class="p">,</span> <span class="n">event_headers</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="k">with</span> <span class="n">event_headers</span><span class="p">(</span><span class="n">tenant</span><span class="o">=</span><span class="s2">"acme"</span><span class="p">,</span> <span class="n">correlation_id</span><span class="o">=</span><span class="n">request_id</span><span class="p">):</span>
+</span><span data-line="4">    <span class="n">app</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="s2">"order_created"</span><span class="p">,</span> <span class="n">order_id</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span><span data-line="5">
+</span><span data-line="6"><span class="nd">@listener</span><span class="p">(</span><span class="s2">"order_created"</span><span class="p">)</span>
+</span><span data-line="7"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">on_order</span><span class="p">(</span><span class="n">order_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">ctx</span><span class="p">:</span> <span class="n">EventContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="8">    <span class="n">ctx</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s2">"tenant"</span><span class="p">],</span> <span class="n">ctx</span><span class="o">.</span><span class="n">correlation_id</span>   <span class="c1"># injected by annotation</span>
+</span></pre></div>
+</div>
+<p>Inside a listener, <code class="docutils literal notranslate"><span class="pre">litestar_events.context.current_event()</span></code> returns the same
+context. Events emitted from a listener inherit its correlation id, so one
+request can be followed across processes. Headers are not inherited.</p>
+<section id="request-ids">
+<h4>Request ids<a class="headerlink" href="#request-ids" title="Link to this heading">#</a></h4>
+<p>To use the incoming request’s id as the correlation id of the events emitted
+while serving it, name the header in the config:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">EventsConfig</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="n">RabbitEventEmitter</span><span class="p">,</span> <span class="n">request_id_header</span><span class="o">=</span><span class="s2">"x-request-id"</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>The middleware (<a class="reference internal" href="modules.html#litestar_events.middleware.RequestIdMiddleware" title="litestar_events.middleware.RequestIdMiddleware"><code class="xref py py-class docutils literal notranslate"><span class="pre">RequestIdMiddleware</span></code></a>) is
+added outermost. A missing id, or one that is not 1-128 characters of
+<code class="docutils literal notranslate"><span class="pre">A-Z</span> <span class="pre">a-z</span> <span class="pre">0-9</span> <span class="pre">.</span> <span class="pre">_</span> <span class="pre">-</span></code>, is replaced by a generated one. The id is echoed on the
+response unless <code class="docutils literal notranslate"><span class="pre">echo_request_id=False</span></code>. Without <code class="docutils literal notranslate"><span class="pre">request_id_header</span></code> no
+middleware is added. Skip routes such as health checks with
+<code class="docutils literal notranslate"><span class="pre">request_id_exclude_path_pattern=&quot;^/health&quot;</span></code>, or per route with
+<code class="docutils literal notranslate"><span class="pre">opt={&quot;exclude_request_id&quot;:</span> <span class="pre">True}</span></code>.</p>
+<p>A custom codec implements <code class="docutils literal notranslate"><span class="pre">encode(Message)</span></code>, <code class="docutils literal notranslate"><span class="pre">decode(data)</span> <span class="pre">-&gt;</span> <span class="pre">Message</span></code> and
+<code class="docutils literal notranslate"><span class="pre">invoke(fn,</span> <span class="pre">event_id,</span> <span class="pre">message)</span></code>, where
+<a class="reference internal" href="modules.html#litestar_events.codec.Message" title="litestar_events.codec.Message"><code class="xref py py-class docutils literal notranslate"><span class="pre">Message</span></code></a> holds <code class="docutils literal notranslate"><span class="pre">args</span></code>, <code class="docutils literal notranslate"><span class="pre">kwargs</span></code>, <code class="docutils literal notranslate"><span class="pre">headers</span></code>
+and <code class="docutils literal notranslate"><span class="pre">correlation_id</span></code>.</p>
+</section>
+</section>
+</section>
+<section id="delivery-guarantees-by-backend">
+<h2>Delivery guarantees by backend<a class="headerlink" href="#delivery-guarantees-by-backend" title="Link to this heading">#</a></h2>
+<p>While no worker is connected, a non-durable backend loses events. <code class="docutils literal notranslate"><span class="pre">run</span></code> and
+<code class="docutils literal notranslate"><span class="pre">drain</span></code> print a warning for these.</p>
+<div class="table-wrapper docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Backend</p></th>
+<th class="head"><p>Durable?</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Redis (Pub/Sub), ZeroMQ, MQTT (QoS 0), NATS (core), PostgreSQL
+(LISTEN/NOTIFY)</p></td>
+<td><p>No. At-most-once; events emitted while no worker is connected are lost.</p></td>
+</tr>
+<tr class="row-odd"><td><p>RabbitMQ</p></td>
+<td><p>Only with <code class="docutils literal notranslate"><span class="pre">queue_name</span></code> set (shared durable queue).</p></td>
+</tr>
+<tr class="row-even"><td><p>Google Pub/Sub</p></td>
+<td><p>Only with <code class="docutils literal notranslate"><span class="pre">subscription_name</span></code> set.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Kafka, Confluent</p></td>
+<td><p>Only with an explicit <code class="docutils literal notranslate"><span class="pre">group_id</span></code>; the default is a random group per
+process, so a restarted worker starts from <code class="docutils literal notranslate"><span class="pre">latest</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p>SQS</p></td>
+<td><p>Yes.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="testing">
+<h2>Testing<a class="headerlink" href="#testing" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">litestar_events.contrib.memory.MemoryEventEmitter</span></code> dispatches events inside
+the process. Use it in tests; it needs no broker.</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="usage.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title">Usage</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="modules.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title">Modules</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright"><p>2026, Hasan Sezer Taşan</p>
+  
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> and
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+  <a href="https://github.com/hasansezertasan/litestar_events" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div>
+    </div>
+  </div>
+</footer>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="_static/copybutton.js?v=f281be69"></script>
+      <script>let toggleHintShow = 'Click to show';</script>
+      <script>let toggleHintHide = 'Click to hide';</script>
+      <script>let toggleOpenOnPrint = 'true';</script>
+      <script src="_static/togglebutton.js?v=b8b12719"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+      <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+      <script src="_static/shibuya.js?v=50760d75"></script>
+      <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script></body>
+</html>

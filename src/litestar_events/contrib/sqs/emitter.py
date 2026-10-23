@@ -4,10 +4,9 @@ import asyncio
 import logging
 from collections import defaultdict
 from contextlib import AsyncExitStack, suppress
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
 from litestar.events import BaseEventEmitterBackend, EventListener
-from typing_extensions import Self
 
 from litestar_events._queue import (
     CORRELATION_HEADER,

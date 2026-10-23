@@ -172,7 +172,7 @@ def _tracking(
             item.fn = fn
 
 
-async def _drain(app: Litestar, timeout: float) -> None:
+async def _drain(app: Litestar, timeout: float) -> None:  # noqa: ASYNC109
     activity = _Activity()
     with _tracking(_emitter(app), activity):
         async with app.lifespan():

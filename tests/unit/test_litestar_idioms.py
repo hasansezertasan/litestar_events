@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any
+from typing import Any, Self
 
 import pytest
 from litestar import Litestar, Request, get
@@ -11,7 +11,6 @@ from litestar.config.app import AppConfig
 from litestar.events import listener
 from litestar.exceptions import ImproperlyConfiguredException
 from litestar.testing import AsyncTestClient
-from typing_extensions import Self
 
 from litestar_events import _cli
 from litestar_events._queue import QueuedEmitterMixin, RoleAwareEmitter

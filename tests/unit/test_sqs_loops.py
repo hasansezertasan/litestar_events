@@ -12,13 +12,12 @@ from __future__ import annotations
 
 import asyncio
 import json
-from typing import Any, cast
+from typing import Any, Self, cast
 
 import aiobotocore.session
 import pytest
 from dirty_equals import IsStr
 from litestar.events import EventListener, listener
-from typing_extensions import Self
 
 
 class _QueueDoesNotExistError(Exception):

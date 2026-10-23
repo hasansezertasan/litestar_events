@@ -7,7 +7,7 @@ import os
 import signal
 import sys
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Self, cast
 
 import click
 import pytest
@@ -15,7 +15,6 @@ from click.testing import CliRunner
 from litestar import Litestar
 from litestar.events import BaseEventEmitterBackend, listener
 from litestar.exceptions import ImproperlyConfiguredException
-from typing_extensions import Self
 
 from litestar_events import _cli
 from litestar_events.config import EventsConfig

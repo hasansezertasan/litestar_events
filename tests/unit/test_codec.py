@@ -27,7 +27,7 @@ from litestar_events.context import (
 from litestar_events.contrib.memory import MemoryEventEmitter
 from litestar_events.plugin import EventsPlugin
 
-UTC = dt.timezone.utc
+UTC = dt.UTC
 
 
 @dataclass

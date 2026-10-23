@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 __all__ = ["EventsConfig", "EventsRole", "resolve_role"]
 
 
-class EventsRole(str, Enum):
+class EventsRole(str, Enum):  # noqa: UP042
     """What an emitter does in the current process."""
 
     #: Publish and consume in the same process (the historical behavior).

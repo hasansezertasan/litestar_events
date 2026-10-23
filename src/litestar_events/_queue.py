@@ -381,7 +381,7 @@ class QueuedEmitterMixin:
                     exc_info=result,
                 )
 
-    async def _flush_publisher(self, timeout: float = 5.0) -> None:
+    async def _flush_publisher(self, timeout: float = 5.0) -> None:  # noqa: ASYNC109
         """Give buffered events up to ``timeout`` seconds to reach the broker.
 
         Backends call this from ``__aexit__`` before cancelling the publisher
@@ -394,7 +394,7 @@ class QueuedEmitterMixin:
             return
         try:
             await asyncio.wait_for(queue.join(), timeout)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.warning(
                 "Shutting down with %d unpublished event(s) after %gs",
                 queue.qsize(),
@@ -425,7 +425,7 @@ class QueuedEmitterMixin:
         """
         self._publish_queue = None
 
-    async def _finish_local_tasks(self, timeout: float = 5.0) -> None:
+    async def _finish_local_tasks(self, timeout: float = 5.0) -> None:  # noqa: ASYNC109
         """Wait up to ``timeout`` seconds for local listeners, then cancel them."""
         tasks = set(self._local_tasks)
         if not tasks:

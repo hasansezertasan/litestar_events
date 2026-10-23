@@ -4,11 +4,10 @@ import asyncio
 import contextlib
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 from uuid import uuid4
 
 from litestar.events import BaseEventEmitterBackend, EventListener
-from typing_extensions import Self
 
 from litestar_events._queue import QueuedEmitterMixin, QueuePayload, require
 from litestar_events.context import outgoing_headers

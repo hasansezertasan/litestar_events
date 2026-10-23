@@ -7,10 +7,9 @@ import logging
 import re
 import uuid
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
 from litestar.events import BaseEventEmitterBackend, EventListener
-from typing_extensions import Self
 
 from litestar_events._queue import (
     QueuedEmitterMixin,

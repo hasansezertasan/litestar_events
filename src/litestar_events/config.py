@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import StrEnum
+from enum import Enum
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 __all__ = ["EventsConfig", "EventsRole", "resolve_role"]
 
 
-class EventsRole(StrEnum):
+class EventsRole(str, Enum):  # noqa: UP042
     """What an emitter does in the current process."""
 
     #: Publish and consume in the same process (the historical behavior).

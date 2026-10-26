@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.0](https://github.com/hasansezertasan/litestar_events/compare/v0.1.1...v0.2.0) (2026-10-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* drop Python 3.10 support ([#9](https://github.com/hasansezertasan/litestar_events/issues/9))
+
+### 🔧 Chores
+
+* drop Python 3.10 support ([#9](https://github.com/hasansezertasan/litestar_events/issues/9)) ([f838e41](https://github.com/hasansezertasan/litestar_events/commit/f838e41b95a0d26ab0beb369c3158f2425412e49))
+
 ## [0.1.1](https://github.com/hasansezertasan/litestar_events/compare/v0.1.0...v0.1.1) (2026-10-18)
 
 

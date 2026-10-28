@@ -545,6 +545,7 @@ strict = true
 
 
 [tool.basedpyright]
+<<<<<<< before updating
 # Paths resolve relative to this file (repo root), so no separate
 # pyrightconfig.json is needed. These are the project's pre-adoption settings:
 # standard mode with the unknown-member/unused-function noise off. The suite
@@ -560,6 +561,11 @@ reportUnnecessaryTypeIgnoreComment = true
 reportUnusedFunction = false
 reportFunctionMemberAccess = false
 typeCheckingMode = "standard"
+=======
+exclude = [".venv"]
+include = ["src/litestar_events", "docs/examples"]
+pythonVersion = "3.11"
+>>>>>>> after updating
 venv = ".venv"
 venvPath = "."
 
@@ -578,6 +584,7 @@ error-on-warning = true
 
 
 [tool.pyrefly]
+<<<<<<< before updating
 disable-search-path-heuristics = true
 disable-project-excludes-heuristics = true
 project-excludes = [
@@ -599,6 +606,10 @@ matches = "tests/**"
 missing-attribute = false
 bad-argument-type = false
 no-matching-overload = false
+=======
+python-version = "3.11"
+project-includes = ["src", "docs/examples"]
+>>>>>>> after updating
 
 [tool.pylint.main]
 # pylint runs as an always-on gate that deliberately overlaps ruff's PL* rules.
